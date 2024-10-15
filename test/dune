@@ -1,0 +1,5 @@
+(test
+ (name tests)
+ (libraries str alcotest yojson cminus)
+ (deps (source_tree suites)))
+

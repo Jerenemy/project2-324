@@ -1,0 +1,8 @@
+lib: [
+  "_build/install/default/lib/cminus/META"
+  "_build/install/default/lib/cminus/dune-package"
+  "_build/install/default/lib/cminus/opam"
+]
+bin: [
+  "_build/install/default/bin/cminus"
+]

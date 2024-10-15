@@ -1,0 +1,16 @@
+# dune exec cminus exec print00.c
+# OCAMLPARAM: unset
+# Shared cache: disabled
+# Shared cache location: /Users/jeremyzay/.cache/dune/db
+# Workspace root: /Users/jeremyzay/Desktop/comp324/PROJECT_2/project2/starter
+# Auto-detected concurrency: 8
+# Dune context:
+#  { name = "default"
+#  ; kind = "default"
+#  ; profile = Dev
+#  ; merlin = true
+#  ; fdo_target_exe = None
+#  ; build_dir = In_build_dir "default"
+#  ; instrument_with = []
+#  }
+$ /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -config > /var/folders/r0/d5kdxg1j5gx_vp9lqdkcxvzh0000gn/T/dune_0f4523_output
