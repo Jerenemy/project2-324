@@ -59,6 +59,7 @@ module Value = struct
     | V_Str s -> s
 end
 
+
 (* Module for input/output built-in functions.
  *)
 module Io = struct
@@ -193,12 +194,61 @@ module Io = struct
 
 end
 
+module Env = struct
+  type t = (Ast.Id.t * Value.t) list
+
+  (* empty = the empty environment.
+   *)
+  let empty : t = []
+  (* add exceptions for function redef and one other thing *)
+  (* 
+  Env.lookup (rho : Env.t) (x : Ast.Id.t) : Value.t
+    
+  Retrieve the value associated with identifier x from the environment rho or the program pgm.
+  
+  Searches rho for a binding (x', v') where x = x'. If found, returns v'.
+  Raises UnboundVariable x if x is not found. 
+  *)
+  let lookup 
+      (rho : t) 
+      (_ : Ast.Id.t) : Value.t = 
+    match rho with
+    | _ -> Failures.unimplemented "lookup"
+
+  (* 
+  Env.assign (rho : Env.t) (x : Ast.Id.t) (v : Value.t) : (Env.t)
+
+  Assign the value v to the identifier x, updating the environment rho.
+ *)
+  let assign 
+      (rho : t) 
+      (x : Ast.Id.t) 
+      (v: Value.t) : (t) = 
+    (x, v) :: rho
+
+  
+  
+end
+
+
+module EnvBlock = struct
+  type t = Envs of Env.t list
+
+  (*
+  maybe call this start/init/new 
+  empty = the new environment block, which is NOT actually empty: a list that contains only the empty environment.
+   *)
+  let empty : t = Envs [Env.empty]
+end
+
 module Frame = struct
   
-  type t = Envs of unit
+  type t = Envs of EnvBlock.t
          | Return of Value.t
   
-  let empty = Envs ()
+  (* newframe = the new frame, which contains the a new environment block: empty.
+   *)
+  let empty = Envs EnvBlock.empty
 end
 
 (* exec p:  Execute the program `p`.
@@ -217,13 +267,19 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     (* Failures.unimplemented "get_body" *)
   in
 
-  let rec exec_stms (stms : Ast.Stm.t list) (eta : Frame.t) : Frame.t =
+  (* 
+  if exec_stms returns a Frame, when does it return a frame? When it's an empty list?
+    are the block statemenet returns handeled here? 
+  (when a block statement concludes, it returns a ReturnFrame? or when a function concludes?) 
+  *)
+  let rec exec_stms (stms : Ast.Stm.t list) (rhos : EnvBlock.t) : Frame.t =
     match stms with 
-    | [] -> eta
+    | [] -> Frame.Envs rhos
 
     | Expr e :: stms' ->
-      let _ = eval eta e in
-      exec_stms stms' eta
+      (* need to pass a val of type EnvBlock into eval, not Frame *)
+      let _ = eval rhos e in
+      exec_stms stms' rhos
 
     | Return None :: _' ->
       Frame.Return Value.V_None
@@ -231,8 +287,8 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     | _ -> Failures.unimplemented "exec_stms"
 
   
-
-  and eval (eta : Frame.t) (e : Ast.Expr.t) : Value.t =
+  (* instead of eta, paass rhos (envblock) because never evaluate exprs under Frame.Return  *)
+  and eval (rhos : EnvBlock.t) (e : Ast.Expr.t) : Value.t =
     match e with
     | Num n -> V_Int n
     | Call(f, es) -> 
@@ -240,13 +296,13 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
         try
           let stms = get_body f in
           begin 
-            match exec_stms stms eta with
-            | Envs () -> Failures.impossible "Function didn't execute return!"
+            match exec_stms stms rhos with
+            | Envs _ -> Failures.impossible "Function didn't execute return!"
             | Return v -> v
           end
         with
         | UndefinedFunction f -> 
-          let vs = List.map (eval eta) es in 
+          let vs = List.map (eval rhos) es in 
           try 
             Io.do_call f vs
           with Io.ApiError _ -> raise @@ UndefinedFunction f 
@@ -257,7 +313,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     ) 
   in
 
-  let _ = eval Frame.empty (Call("main", [])) in
+  let _ = eval EnvBlock.empty (Call("main", [])) in
   ()
 
 

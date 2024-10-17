@@ -267,13 +267,19 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     (* Failures.unimplemented "get_body" *)
   in
 
-  let rec exec_stms (stms : Ast.Stm.t list) (eta : Frame.t) : Frame.t =
+  (* 
+  if exec_stms returns a Frame, when does it return a frame? When it's an empty list?
+    are the block statemenet returns handeled here? 
+  (when a block statement concludes, it returns a ReturnFrame? or when a function concludes?) 
+  *)
+  let rec exec_stms (stms : Ast.Stm.t list) (rhos : EnvBlock.t) : Frame.t =
     match stms with 
-    | [] -> eta
+    | [] -> Frame.Envs rhos
 
     | Expr e :: stms' ->
-      let _ = eval eta e in
-      exec_stms stms' eta
+      (* need to pass a val of type EnvBlock into eval, not Frame *)
+      let _ = eval rhos e in
+      exec_stms stms' rhos
 
     | Return None :: _' ->
       Frame.Return Value.V_None
@@ -282,7 +288,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
 
   
   (* instead of eta, paass rhos (envblock) because never evaluate exprs under Frame.Return  *)
-  and eval (eta : Frame.t) (e : Ast.Expr.t) : Value.t =
+  and eval (rhos : EnvBlock.t) (e : Ast.Expr.t) : Value.t =
     match e with
     | Num n -> V_Int n
     | Call(f, es) -> 
@@ -290,13 +296,13 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
         try
           let stms = get_body f in
           begin 
-            match exec_stms stms eta with
+            match exec_stms stms rhos with
             | Envs _ -> Failures.impossible "Function didn't execute return!"
             | Return v -> v
           end
         with
         | UndefinedFunction f -> 
-          let vs = List.map (eval eta) es in 
+          let vs = List.map (eval rhos) es in 
           try 
             Io.do_call f vs
           with Io.ApiError _ -> raise @@ UndefinedFunction f 
@@ -307,7 +313,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     ) 
   in
 
-  let _ = eval Frame.empty (Call("main", [])) in
+  let _ = eval EnvBlock.empty (Call("main", [])) in
   ()
 
 
