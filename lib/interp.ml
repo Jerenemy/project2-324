@@ -416,73 +416,7 @@ let rec var_dec (eval) (rhos : EnvBlock.t) (rho : Env.t) (vds : (Ast.Id.t * Ast.
     (* this should solve the problem - it did *)
     
   
-(* put this as a mutually recursive in exec, paired with exec_stms *)
-let exec_stm (eval) (rhos) (stm)  : Frame.t = 
 
-  match stm with 
-  | Ast.Stm.VarDec vds -> 
-    let _ = vds in
-    begin
-      match rhos with
-      | EnvBlock.Envs (rho :: rhos_tail) ->
-        let rho' = var_dec eval rhos rho vds in
-        let new_rhos = EnvBlock.Envs (rho' :: rhos_tail) in
-        (* this should return a frame here, and then the rest of the stms should be executed in exec_stms *)
-        let frame = Frame.Envs new_rhos in 
-        let _ = print_frame frame in 
-        frame 
-      | _ -> Failures.impossible "empty rhos"
-    end
-    
-
-  | Ast.Stm.ArrayDec (_ :: _) -> Failures.unimplemented "exec_stms ArrayDec"
-
-  (* (Ast.Stm.Assign ("x", (Ast.Expr.Num 1))) *)
-  | Ast.Stm.Assign (x, e) -> 
-    let v = eval rhos (Some e) in (* Some e, because never assigning a variable an undefined value, right? *)
-    Frame.Envs (EnvBlock.assign rhos x v)
-
-    (* Failures.unimplemented "exec_stms Assign" *)
-
-
-  | Ast.Stm.IndexAssign (_, _, _) -> Failures.unimplemented "exec_stms IndexAssign"
-
-  | Ast.Stm.Expr e ->
-    (* need to pass a val of type EnvBlock into eval, not Frame *)
-    (* ERROR This expression has type Ast.Expr.t but an expression was expected of type
-    Ast.Expr.t option *)
-    let _ = eval rhos (Some e) in (* VERIFY: is e always Some, never None? *)
-    Frame.Envs rhos  (* Continue with the same environment *)
-
-  
-  | Block _ -> 
-    Failures.unimplemented "Block"
-  | IfElse _ -> 
-    Failures.unimplemented "IfElse"
-  | While _ -> 
-    Failures.unimplemented "While"
-
-  (* what is the type of return? is it an expression or expr option? sometimes it is None, right? *)
-  | Ast.Stm.Return e_opt ->
-    Frame.Return (eval rhos e_opt) (* FIRST MAJOR PROBLEM:  this sho*)
-    (* begin
-      match e_opt with
-      | Some e -> 
-        let v = eval rhos e in
-        Frame.Return v 
-      | None -> Frame.Return Value.V_None
-    end *)
-    
-    (* begin 
-      match e_opt with
-      | Some e -> 
-    let _ = v in
-    Failures.unimplemented "Return e" *)
-  (* | Ast.Stm.Return None -> *)
-  | _ -> Failures.impossible "uncaught case!"
-  
-  
-    
 
 
 (* exec p:  Execute the program `p`.
@@ -510,18 +444,93 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     match stms with 
     | [] -> Frame.Envs rhos
     | stm :: stms' ->
-      let eta = exec_stm eval rhos stm 
+      let eta = exec_stm rhos stm 
       in
         begin 
           match eta with
-          | Frame.Return rf -> 
-            Frame.Return rf
-          | Frame.Envs rhos' -> 
+          | Return rf -> 
+            Return rf
+          | Envs rhos' -> 
             exec_stms stms' rhos'
         end 
 
+    (* put this as a mutually recursive in exec, paired with exec_stms *)
+  and exec_stm (rhos) (stm)  : Frame.t = 
+  
+    match stm with 
+    | VarDec vds -> 
+      let _ = vds in
+      begin
+        match rhos with
+        | Envs (rho :: rhos_tail) ->
+          let rho' = var_dec eval rhos rho vds in
+          let new_rhos = EnvBlock.Envs (rho' :: rhos_tail) in
+          (* this should return a frame here, and then the rest of the stms should be executed in exec_stms *)
+          let frame = Frame.Envs new_rhos in 
+          let _ = print_frame frame in 
+          frame 
+        | _ -> Failures.impossible "empty rhos"
+      end
+      
+  
+    | ArrayDec (_ :: _) -> Failures.unimplemented "exec_stms ArrayDec"
+  
+    (* (Ast.Stm.Assign ("x", (Ast.Expr.Num 1))) *)
+    | Assign (x, e) -> 
+      let v = eval rhos (Some e) in (* Some e, because never assigning a variable an undefined value, right? *)
+      Frame.Envs (EnvBlock.assign rhos x v)
+  
+      (* Failures.unimplemented "exec_stms Assign" *)
+  
+  
+    | IndexAssign (_, _, _) -> Failures.unimplemented "exec_stms IndexAssign"
+  
+    | Expr e ->
+      (* need to pass a val of type EnvBlock into eval, not Frame *)
+      (* ERROR This expression has type Ast.Expr.t but an expression was expected of type
+      Ast.Expr.t option *)
+      let _ = eval rhos (Some e) in (* VERIFY: is e always Some, never None? *)
+      (* stm expr execution doesn't change the frame, maybe has a side effect (like print) *)
+      Frame.Envs rhos  (* Continue with the same environment *)
+  
     
-
+    | Block stms -> 
+      (* evaluate stm list given by block just push new empty env on top of rhos *)
+      (* begin  *)
+        (* since Block gives a list of stms, only solution is to call exec_stms on it. therefore pass exec_stms func 
+        or just make it mutually recursive. i think that's what ill do*)
+        (* match stms with
+        |  -> pattern
+      end *)
+      let _ = stms in
+  
+      Failures.unimplemented "Block"
+    | IfElse _ -> 
+      Failures.unimplemented "IfElse"
+    | While _ -> 
+      Failures.unimplemented "While"
+  
+    (* what is the type of return? is it an expression or expr option? sometimes it is None, right? *)
+    | Return e_opt ->
+      Frame.Return (eval rhos e_opt) (* FIRST MAJOR PROBLEM:  this sho*)
+      (* begin
+        match e_opt with
+        | Some e -> 
+          let v = eval rhos e in
+          Frame.Return v 
+        | None -> Frame.Return Value.V_None
+      end *)
+      
+      (* begin 
+        match e_opt with
+        | Some e -> 
+      let _ = v in
+      Failures.unimplemented "Return e" *)
+    (* | Ast.Stm.Return None -> *)
+    | _ -> Failures.impossible "uncaught case!"
+    
+    
+      
   
   (* instead of eta, paass rhos (envblock) because never evaluate exprs under Frame.Return  *)
   (* e : Ast.Expr.t option, when SOME, eval expr, when NONE, return V_Undefined (because eval-ing expr of a VarDec stm, when NONE, no val assigned) *)
