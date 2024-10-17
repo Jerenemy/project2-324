@@ -256,7 +256,8 @@ module Env = struct
     let rec update (rho : t) (x : Ast.Id.t) (v : Value.t) : t option =
       match rho with
       | (x',v') :: rho' -> 
-        if x = x' then Some ((x, v) :: rho')
+        if x = x' then 
+          Some ((x, v) :: rho')
 
         (* else, need to look in the rest of the interp, 
         and if the recursive call returns Some, then the entire thing should be Some, 
@@ -396,17 +397,19 @@ let binop (op : Ast.Expr.binop) (v : Value.t) (v' : Value.t) : Value.t =
               (Value.to_string v) (Ast.Expr.show_binop op) (Value.to_string v')
           )
         
-let rec var_dec (eval) (rhos) (rho) (vds) : Env.t = 
-  let _ = eval in
-  let _ = rho in
-  let _ = vds in
+let rec var_dec (eval) (rhos : EnvBlock.t) (rho : Env.t) (vds : (Ast.Id.t * Ast.Expr.t option) list) : Env.t = 
   match vds with
   | [] -> rho (* base case *)
   (* need rhos to pass into eval, but does it make sense passing in rhos and rho separately? do it for simpler style *)
-  | (x, expr) :: vds' ->  var_dec eval rhos ((x, eval rhos expr) :: rho)  vds'
-
-
-  (* Failures.unimplemented "var_dec" *)
+  (* I'll deal with the problem here, and catch the Value.V_None and convert it to Value.V_Undefined here? *)
+  | (x, e_opt) :: vds' ->  
+    begin 
+      match e_opt with
+      | Some _ -> var_dec eval rhos ((x, eval rhos e_opt) :: rho)  vds'
+      | None -> var_dec eval rhos ((x, Value.V_Undefined) :: rho)  vds'
+    end
+    (* this should solve the problem *)
+    
   
 (* put this as a mutually recursive in exec, paired with exec_stms *)
 let exec_stm (eval) (rhos) (stm)  : Frame.t = 
@@ -442,14 +445,39 @@ let exec_stm (eval) (rhos) (stm)  : Frame.t =
   | Ast.Stm.Expr e ->
     (* need to pass a val of type EnvBlock into eval, not Frame *)
     (* ERROR This expression has type Ast.Expr.t but an expression was expected of type
-  Ast.Expr.t option *)
+    Ast.Expr.t option *)
     let _ = eval rhos (Some e) in (* VERIFY: is e always Some, never None? *)
     Frame.Envs rhos  (* Continue with the same environment *)
 
-  | Ast.Stm.Return None ->
-    Frame.Return Value.V_None 
+  
+  | Block _ -> 
+    Failures.unimplemented "Block"
+  | IfElse _ -> 
+    Failures.unimplemented "IfElse"
+  | While _ -> 
+    Failures.unimplemented "While"
 
-  | _ -> Failures.unimplemented "exec_stms"
+  (* what is the type of return? is it an expression or expr option? sometimes it is None, right? *)
+  | Ast.Stm.Return e_opt ->
+    Frame.Return (eval rhos e_opt) (* FIRST MAJOR PROBLEM:  this sho*)
+    (* begin
+      match e_opt with
+      | Some e -> 
+        let v = eval rhos e in
+        Frame.Return v 
+      | None -> Frame.Return Value.V_None
+    end *)
+    
+    (* begin 
+      match e_opt with
+      | Some e -> 
+    let _ = v in
+    Failures.unimplemented "Return e" *)
+  (* | Ast.Stm.Return None -> *)
+  | _ -> Failures.impossible "uncaught case!"
+  
+  
+    
 
 
 (* exec p:  Execute the program `p`.
@@ -507,7 +535,9 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
         let _ = e in
         Failures.unimplemented "Index xs[e]"
       | Num n -> V_Int n
-      | Bool b -> Value.V_Bool b
+      | Bool b -> V_Bool b
+      (* `s` parses to String s for strings s. *)
+      | Str s -> V_Str s
       | Unop (op, e) ->
         unop op (eval rhos (Some e)) (* is the Some necessary, or are we just doing it blindly for no reason? *)
       | Binop (op, e, e') ->
@@ -533,12 +563,19 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
             with Io.ApiError _ -> raise @@ UndefinedFunction f 
         end
       
-      
-      | _ -> Failures.unimplemented (
-        Printf.sprintf "eval: %s" (Ast.Expr.show e)
-      ) 
     end
-    | None -> Value.V_Undefined 
+    | None -> Value.V_None 
+    (* 
+    problem, this can't handle the case for when it's undefined and returns None, but the way it's set up it needs to. 
+    right now, during VarDec, it tries to evaluate the second item, but if it is None, it gives it the Value.V_Undefined and triggers this case.
+    could i just trigger it directly there?
+
+    TRIED TO FIX by checking if it's V_None when assigning to a var
+
+    but wait, this breaks the edge case of var dec with int x = print(x). but is that allowed?
+
+    that is not allowed, since can only declare vars of type int, str, and bool (I think?) 
+    *)
   in
 
   let _ = eval EnvBlock.empty (Some (Call("main", []))) in (* needs to be arg of option type here too *)
