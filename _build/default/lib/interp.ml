@@ -251,6 +251,57 @@ module Frame = struct
   let empty = Envs EnvBlock.empty
 end
 
+(* let  var_dec (eval) (rho) (vds) : Env.t = 
+  Failures.unimplemented "var_dec" *)
+  
+let rec exec_stm (eval) (rhos) (stm)  : Frame.t = 
+  (* let _ = eval in
+  let _ = rhos in
+  let _ = stm in *)
+
+  match stm with 
+  | Ast.Stm.VarDec vds -> 
+    let _ = vds in
+    Failures.unimplemented "exec_stms VarDec"
+
+
+    (* deconstruct rhos and pass head to function *)
+    (* never have empty env *)
+     (* begin
+      match rhos with
+      | EnvBlock.Envs (rho :: rhos_tail)
+        let rho' = var_dec eval rho vds in
+        let new_rhos = EnvBlock.Envs (rho' :: rhos_tail) in
+        exec_stms stms' new_rhos
+      | _ -> Failures.unimplemented "empty rhos"
+    end *)
+    (* let _ = vds in *)
+
+        
+  (* | VarDec _ :: _ ->    *)
+    (* Failures.unimplemented "exec_stms VarDec" *)
+    (* add s to rhos, then pass new rhos into exec_stms 
+    'int x, y;'
+    = (Ast.Stm.VarDec [("x", None); ("y", None)])*)
+
+
+  | Ast.Stm.ArrayDec (_ :: _) -> Failures.unimplemented "exec_stms ArrayDec"
+  
+  | Ast.Stm.Assign (_, _) -> Failures.unimplemented "exec_stms Assign"
+
+  | Ast.Stm.IndexAssign (_, _, _) -> Failures.unimplemented "exec_stms IndexAssign"
+
+  | Ast.Stm.Expr e ->
+    (* need to pass a val of type EnvBlock into eval, not Frame *)
+    let _ = eval rhos e in
+    exec_stm (eval) (rhos) (stm) 
+
+  | Ast.Stm.Return None ->
+    Frame.Return Value.V_None 
+
+  | _ -> Failures.unimplemented "exec_stms"
+
+
 (* exec p:  Execute the program `p`.
  *)
 let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
@@ -275,16 +326,21 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
   let rec exec_stms (stms : Ast.Stm.t list) (rhos : EnvBlock.t) : Frame.t =
     match stms with 
     | [] -> Frame.Envs rhos
+    | stm :: stms' ->
+      let eta = exec_stm eval rhos stm 
+      in
+        begin 
+          match eta with
+          | Frame.Return rf -> 
+            Frame.Return rf
+            (* let _ = rf in *)
+            (* Failures.unimplemented "rf" *)
+          | Frame.Envs rhos' -> 
+            exec_stms stms' rhos'
+        end 
+       (* exec_stms  *)
 
-    | Expr e :: stms' ->
-      (* need to pass a val of type EnvBlock into eval, not Frame *)
-      let _ = eval rhos e in
-      exec_stms stms' rhos
-
-    | Return None :: _' ->
-      Frame.Return Value.V_None
-
-    | _ -> Failures.unimplemented "exec_stms"
+    
 
   
   (* instead of eta, paass rhos (envblock) because never evaluate exprs under Frame.Return  *)

@@ -1,4 +1,4 @@
-# dune exec cminus exec print00.c
+# dune exec cminus exec 00test00.c
 # OCAMLPARAM: unset
 # Shared cache: disabled
 # Shared cache location: /Users/jeremyzay/.cache/dune/db
@@ -13,10 +13,12 @@
 #  ; build_dir = In_build_dir "default"
 #  ; instrument_with = []
 #  }
-$ /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -config > /var/folders/r0/d5kdxg1j5gx_vp9lqdkcxvzh0000gn/T/dune_2510c9_output
-$ (cd _build/.sandbox/f481d21e4b47f70d17e7cd53c34973b0/default && .ppx/0bb5094b13567c3c4e1ee33245b80e63/ppx.exe --cookie 'library-name="cminus"' -o lib/interp.pp.ml --impl lib/interp.ml -corrected-suffix .ppx-corrected -diff-cmd - -dump-ast)
+$ /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -config > /var/folders/r0/d5kdxg1j5gx_vp9lqdkcxvzh0000gn/T/dune_688ca7_output
+$ (cd _build/.sandbox/6306a5fbab8874c0f217cbbc61243177/default && .ppx/0bb5094b13567c3c4e1ee33245b80e63/ppx.exe --cookie 'library-name="cminus"' -o lib/interp.pp.ml --impl lib/interp.ml -corrected-suffix .ppx-corrected -diff-cmd - -dump-ast)
 $ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamldep.opt -modules -impl lib/interp.pp.ml) > _build/default/lib/.cminus.objs/cminus__Interp.impl.d
 $ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I lib/.cminus.objs/byte -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -no-alias-deps -opaque -open Cminus -o lib/.cminus.objs/byte/cminus__Interp.cmo -c -impl lib/interp.pp.ml)
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I bin/.cminus.eobjs/byte -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -I lib/.cminus.objs/byte -no-alias-deps -opaque -o bin/.cminus.eobjs/byte/dune__exe__Cminus.cmi -c -intf bin/cminus.mli)
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I bin/.cminus.eobjs/byte -I bin/.cminus.eobjs/native -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -I lib/.cminus.objs/byte -I lib/.cminus.objs/native -intf-suffix .ml -no-alias-deps -opaque -o bin/.cminus.eobjs/native/dune__exe__Cminus.cmx -c -impl bin/cminus.ml)
 $ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I lib/.cminus.objs/byte -I lib/.cminus.objs/native -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -intf-suffix .ml -no-alias-deps -opaque -open Cminus -o lib/.cminus.objs/native/cminus__Interp.cmx -c -impl lib/interp.pp.ml)
 $ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/cminus.cmxa lib/.cminus.objs/native/cminus.cmx lib/.cminus.objs/native/cminus__Ast.cmx lib/.cminus.objs/native/cminus__Parser.cmx lib/.cminus.objs/native/cminus__Lexer.cmx lib/.cminus.objs/native/cminus__Failures.cmx lib/.cminus.objs/native/cminus__Interp.cmx)
 $ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -o bin/cminus.exe /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime/ppx_deriving_runtime.cmxa lib/cminus.cmxa bin/.cminus.eobjs/native/dune__exe__Cminus.cmx)
