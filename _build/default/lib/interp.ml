@@ -512,8 +512,18 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     (* `if (e) s else s'` parses to If(e, s, s').
        * `if (e) s` parses to If(e, s, Block []).
        *)
-    | IfElse _ -> 
-      Failures.unimplemented "IfElse"
+    (* does it matter what type of expr each branch is?
+     *)
+    | IfElse (e, s, s') -> 
+      let v = eval rhos (Some e) in
+      begin
+        match v with
+        | Value.V_Bool b -> 
+          if b then exec_stm rhos s 
+          else exec_stm rhos s'
+        | _ -> raise @@ TypeError "non bool test case given to IfElse"
+      end
+      (* Failures.unimplemented "IfElse" *)
 
     | While _ -> 
       Failures.unimplemented "While"
