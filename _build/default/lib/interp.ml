@@ -525,8 +525,18 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       end
       (* Failures.unimplemented "IfElse" *)
 
-    | While _ -> 
-      Failures.unimplemented "While"
+    (* `while e s` parses to While(e, s).
+       *)
+    | While (e, s) -> 
+      let v = eval rhos (Some e) in
+      begin
+        match v with
+        | Value.V_Bool b -> 
+          if b then exec_stm rhos s 
+          else Frame.Envs rhos
+        | _ -> raise @@ TypeError "non bool test case given to While"
+      end
+      (* Failures.unimplemented "While" *)
   
     (* what is the type of return? is it an expression or expr option? sometimes it is None, right? *)
     | Return e_opt ->
