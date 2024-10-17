@@ -214,11 +214,28 @@ module Env = struct
   Searches rho for a binding (x', v') where x = x'. If found, returns v'.
   Raises UnboundVariable x if x is not found. 
   *)
-  let lookup 
+  let rec lookup 
       (rho : t) 
-      (_ : Ast.Id.t) : Value.t = 
+      (x : Ast.Id.t) : Value.t option = 
     match rho with
-    | _ -> Failures.unimplemented "lookup"
+    (* | _ -> Failures.unimplemented "lookup" *)
+
+      | (x',v) :: rho' -> 
+        if x = x' then Some (v)
+
+        (* else, need to look in the rest of the interp, 
+        and if the recursive call returns Some, then the entire thing should be Some, 
+        but if the recursive call returns None, then the entire thing should be None. 
+        but can't cons the other vars back on if it's option type, so need to deconstruct it *)
+        else 
+          let v_opt = lookup rho' x in 
+          begin
+            match v_opt with
+            | Some v_some -> Some v_some
+            | None -> None
+          end
+
+      | [] -> None 
 
   (* 
   Env.declaration (rho : Env.t) (x : Ast.Id.t) (v : Value.t) : (Env.t)
@@ -232,22 +249,9 @@ module Env = struct
       (v: Value.t) : (t) = 
     (x, v) :: rho
 
-    (* i think using option type here is unneccessary *)
-  (* let rec update (rho) (x) (v) : t option =
-    match rho with
-    | (x',v') :: rho' -> 
-      if x = x' then Some ((x, v) :: rho')
-      else 
-        let rho_opt' = update rho' x v in 
-        begin
-          match rho_opt' with
-          | Some rho_some -> (x',v') :: (update rho' x v)
-          | None -> None
-        end
-          (x',v') :: (update rho' x v)
-    | [] -> None *)
-
-    (* just returns the updated enviroment  *)
+    
+    (* when returns Some, that means the head environment has been updated. when returns None, 
+    that means that var was not in the head environment, and the update needs to be performed on a lower level environment  *)
 
     let rec update (rho : t) (x : Ast.Id.t) (v : Value.t) : t option =
       match rho with
@@ -258,7 +262,6 @@ module Env = struct
         and if the recursive call returns Some, then the entire thing should be Some, 
         but if the recursive call returns None, then the entire thing should be None. 
         but can't cons the other vars back on if it's option type, so need to deconstruct it *)
-        
         else 
           let rho_opt = update rho' x v in 
           begin
@@ -302,7 +305,7 @@ module EnvBlock = struct
   let empty : t = Envs [Env.empty]
 
 
-  let assign (rhos : t) (x : Ast.Id.t) (v : Value.t) : t = 
+  let rec assign (rhos : t) (x : Ast.Id.t) (v : Value.t) : t = 
     match rhos with
     | Envs (rho :: rhos') -> 
       (* if x in rho then update x to v, else rho :: assign rhos' x v *)
@@ -310,10 +313,28 @@ module EnvBlock = struct
       begin
         match rho_opt with
         | Some rho' -> Envs (rho' :: rhos')
-        | None -> rhos
+        (* This expression has type t but an expression was expected of type Env.t listocamllsp *)
+        | None -> 
+          (* need it to be type Env.t list, not Envblock.Envs *)
+          let Envs envs_assigned = (assign (Envs rhos') x v) in
+          Envs (rho :: envs_assigned)
+        (* why are returning just rhos here? this means that the var wasn't what? during assign *) 
       end
 
-    | Envs [] -> Failures.impossible "empty rhos"
+    | Envs [] -> raise @@ UnboundVariable x
+
+  let rec lookup (rhos : t) (x : Ast.Id.t) : Value.t = 
+    match rhos with
+    | Envs (rho :: rhos') -> 
+      (* if x in rho then get v, else look for v in rhos' *)
+      let v_opt = Env.lookup rho x in
+      begin
+        match v_opt with
+        | Some v_some -> v_some
+        | None -> lookup (Envs rhos') x
+      end
+
+    | Envs [] -> raise @@ UnboundVariable x
 
   (* DEBUGGING *)
   let show (env_block : t) : string =
@@ -328,7 +349,7 @@ module Frame = struct
   type t = Envs of EnvBlock.t
          | Return of Value.t
   
-  (* newframe = the new frame, which contains the a new environment block: empty.
+  (* empty = the new frame, which contains the a new environment block: empty.
    *)
   let empty = Envs EnvBlock.empty
 end
@@ -389,9 +410,6 @@ let rec var_dec (eval) (rhos) (rho) (vds) : Env.t =
   
 (* put this as a mutually recursive in exec, paired with exec_stms *)
 let exec_stm (eval) (rhos) (stm)  : Frame.t = 
-  (* let _ = eval in
-  let _ = rhos in
-  let _ = stm in *)
 
   match stm with 
   | Ast.Stm.VarDec vds -> 
@@ -479,6 +497,15 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     | Some e ->
     begin 
       match e with  
+      (* `x` parses to Var "x".
+       *)
+      | Var x -> EnvBlock.lookup rhos x
+      (* `xs[e]` parses to Index(xs, e)
+      *)
+      | Index (x, e) -> 
+        let _ = x in
+        let _ = e in
+        Failures.unimplemented "Index xs[e]"
       | Num n -> V_Int n
       | Bool b -> Value.V_Bool b
       | Unop (op, e) ->
