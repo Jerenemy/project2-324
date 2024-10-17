@@ -12,5 +12,8 @@ module Interp = Cminus__Interp
 (** @canonical Cminus.Lexer *)
 module Lexer = Cminus__Lexer
 
+(** @canonical Cminus.Notes *)
+module Notes = Cminus__Notes
+
 (** @canonical Cminus.Parser *)
 module Parser = Cminus__Parser

@@ -251,8 +251,17 @@ module Frame = struct
   let empty = Envs EnvBlock.empty
 end
 
-(* let  var_dec (eval) (rho) (vds) : Env.t = 
-  Failures.unimplemented "var_dec" *)
+let rec var_dec (eval) (rhos) (rho) (vds) : Env.t = 
+  let _ = eval in
+  let _ = rho in
+  let _ = vds in
+  match vds with
+  | [] -> rho (* base case *)
+  (* need rhos to pass into eval, but does it make sense passing in rhos and rho separately? do it for simpler style *)
+  | (x, expr) :: vds' ->  var_dec eval rhos ((x, eval rhos expr) :: rho)  vds'
+
+
+  (* Failures.unimplemented "var_dec" *)
   
 let rec exec_stm (eval) (rhos) (stm)  : Frame.t = 
   (* let _ = eval in
@@ -262,28 +271,16 @@ let rec exec_stm (eval) (rhos) (stm)  : Frame.t =
   match stm with 
   | Ast.Stm.VarDec vds -> 
     let _ = vds in
-    Failures.unimplemented "exec_stms VarDec"
-
-
-    (* deconstruct rhos and pass head to function *)
-    (* never have empty env *)
-     (* begin
+    begin
       match rhos with
-      | EnvBlock.Envs (rho :: rhos_tail)
-        let rho' = var_dec eval rho vds in
+      | EnvBlock.Envs (rho :: rhos_tail) ->
+        let rho' = var_dec eval rhos rho vds in
         let new_rhos = EnvBlock.Envs (rho' :: rhos_tail) in
-        exec_stms stms' new_rhos
-      | _ -> Failures.unimplemented "empty rhos"
-    end *)
-    (* let _ = vds in *)
-
-        
-  (* | VarDec _ :: _ ->    *)
-    (* Failures.unimplemented "exec_stms VarDec" *)
-    (* add s to rhos, then pass new rhos into exec_stms 
-    'int x, y;'
-    = (Ast.Stm.VarDec [("x", None); ("y", None)])*)
-
+        (* this should return a frame here, and then the rest of the stms should be executed in exec_stms *)
+        Frame.Envs new_rhos
+      | _ -> Failures.impossible "empty rhos"
+    end
+    
 
   | Ast.Stm.ArrayDec (_ :: _) -> Failures.unimplemented "exec_stms ArrayDec"
   
@@ -293,8 +290,10 @@ let rec exec_stm (eval) (rhos) (stm)  : Frame.t =
 
   | Ast.Stm.Expr e ->
     (* need to pass a val of type EnvBlock into eval, not Frame *)
-    let _ = eval rhos e in
-    exec_stm (eval) (rhos) (stm) 
+    (* ERROR This expression has type Ast.Expr.t but an expression was expected of type
+  Ast.Expr.t option *)
+    let _ = eval rhos (Some e) in (* VERIFY: is e always Some, never None? *)
+    exec_stm (eval) (rhos) (stm) (* VERIFY: is exec_stm recursive or not?*)
 
   | Ast.Stm.Return None ->
     Frame.Return Value.V_None 
@@ -333,43 +332,48 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
           match eta with
           | Frame.Return rf -> 
             Frame.Return rf
-            (* let _ = rf in *)
-            (* Failures.unimplemented "rf" *)
           | Frame.Envs rhos' -> 
             exec_stms stms' rhos'
         end 
-       (* exec_stms  *)
 
     
 
   
   (* instead of eta, paass rhos (envblock) because never evaluate exprs under Frame.Return  *)
-  and eval (rhos : EnvBlock.t) (e : Ast.Expr.t) : Value.t =
-    match e with
-    | Num n -> V_Int n
-    | Call(f, es) -> 
-      begin
-        try
-          let stms = get_body f in
-          begin 
-            match exec_stms stms rhos with
-            | Envs _ -> Failures.impossible "Function didn't execute return!"
-            | Return v -> v
-          end
-        with
-        | UndefinedFunction f -> 
-          let vs = List.map (eval rhos) es in 
-          try 
-            Io.do_call f vs
-          with Io.ApiError _ -> raise @@ UndefinedFunction f 
-      end
+  (* e : Ast.Expr.t option, when SOME, eval expr, when NONE, return V_Undefined (because eval-ing expr of a VarDec stm, when NONE, no val assigned) *)
+  and eval (rhos : EnvBlock.t) (e_opt : Ast.Expr.t option) : Value.t =
+    match e_opt with
+    | Some e ->
+    begin 
+      match e with  
+      | Num n -> V_Int n
+      (* is es of type Ast.Expr.t option? es is a list of arguments.  *)
+      | Call(f, es) -> 
+        begin
+          try
+            let stms = get_body f in
+            begin 
+              match exec_stms stms rhos with
+              | Envs _ -> Failures.impossible "Function didn't execute return!"
+              | Return v -> v
+            end
+          with
+          | UndefinedFunction f -> 
+            (* verify with Fernando *)
+            let vs = List.map (fun e -> eval rhos (Some e)) es in (* each e in es needs to be type Ast.Expr.t option *)
+            try 
+              Io.do_call f vs
+            with Io.ApiError _ -> raise @@ UndefinedFunction f 
+        end
 
-    | _ -> Failures.unimplemented (
-      Printf.sprintf "eval: %s" (Ast.Expr.show e)
-    ) 
+      | _ -> Failures.unimplemented (
+        Printf.sprintf "eval: %s" (Ast.Expr.show e)
+      ) 
+    end
+    | None -> Value.V_Undefined 
   in
 
-  let _ = eval EnvBlock.empty (Call("main", [])) in
+  let _ = eval EnvBlock.empty (Some (Call("main", []))) in (* needs to be arg of option type here too *)
   ()
 
 
