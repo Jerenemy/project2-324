@@ -495,18 +495,26 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
   
     
     | Block stms -> 
-      (* evaluate stm list given by block just push new empty env on top of rhos *)
-      (* begin  *)
-        (* since Block gives a list of stms, only solution is to call exec_stms on it. therefore pass exec_stms func 
-        or just make it mutually recursive. i think that's what ill do*)
-        (* match stms with
-        |  -> pattern
-      end *)
-      let _ = stms in
-  
-      Failures.unimplemented "Block"
+      (* to evaluate stm list given by block just push new empty env on top of rhos and pop it back off at the end *)
+      let EnvBlock.Envs rhos_list = rhos in
+      (* does the new env get popped off the list once exec_stms is done? it needs to one way or another. *)
+      let block_frame = exec_stms stms (EnvBlock.Envs (Env.empty :: rhos_list)) in
+      begin 
+        match block_frame with
+        (* delete top env if returns another list of envs *)
+        | Frame.Envs EnvBlock.Envs (_ :: block_rhos) -> 
+          Frame.Envs (EnvBlock.Envs block_rhos)
+        | Frame.Return v -> Frame.Return v
+        | Envs EnvBlock.Envs [] -> 
+          Failures.impossible "empty env block"
+      end
+
+    (* `if (e) s else s'` parses to If(e, s, s').
+       * `if (e) s` parses to If(e, s, Block []).
+       *)
     | IfElse _ -> 
       Failures.unimplemented "IfElse"
+
     | While _ -> 
       Failures.unimplemented "While"
   

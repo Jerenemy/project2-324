@@ -1,4 +1,4 @@
-# dune test
+# dune exec cminus parse 30if00.c
 # OCAMLPARAM: unset
 # Shared cache: disabled
 # Shared cache location: /Users/jeremyzay/.cache/dune/db
@@ -13,123 +13,12 @@
 #  ; build_dir = In_build_dir "default"
 #  ; instrument_with = []
 #  }
-$ /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -config > /var/folders/r0/d5kdxg1j5gx_vp9lqdkcxvzh0000gn/T/dune_7a41c9_output
-$ (cd _build/.sandbox/e878a3d8bf1d8152bf66feefe3c5c2b1/default && .ppx/0bb5094b13567c3c4e1ee33245b80e63/ppx.exe --cookie 'library-name="cminus"' -o lib/interp.pp.ml --impl lib/interp.ml -corrected-suffix .ppx-corrected -diff-cmd - -dump-ast)
+$ /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -config > /var/folders/r0/d5kdxg1j5gx_vp9lqdkcxvzh0000gn/T/dune_56e012_output
+$ (cd _build/.sandbox/37c2efe372ae91039750f5a90e438787/default && .ppx/0bb5094b13567c3c4e1ee33245b80e63/ppx.exe --cookie 'library-name="cminus"' -o lib/interp.pp.ml --impl lib/interp.ml -corrected-suffix .ppx-corrected -diff-cmd - -dump-ast)
 $ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamldep.opt -modules -impl lib/interp.pp.ml) > _build/default/lib/.cminus.objs/cminus__Interp.impl.d
 $ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I lib/.cminus.objs/byte -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -no-alias-deps -opaque -open Cminus -o lib/.cminus.objs/byte/cminus__Interp.cmo -c -impl lib/interp.pp.ml)
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I bin/.cminus.eobjs/byte -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -I lib/.cminus.objs/byte -no-alias-deps -opaque -o bin/.cminus.eobjs/byte/dune__exe__Cminus.cmi -c -intf bin/cminus.mli)
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I bin/.cminus.eobjs/byte -I bin/.cminus.eobjs/native -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -I lib/.cminus.objs/byte -I lib/.cminus.objs/native -intf-suffix .ml -no-alias-deps -opaque -o bin/.cminus.eobjs/native/dune__exe__Cminus.cmx -c -impl bin/cminus.ml)
 $ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I lib/.cminus.objs/byte -I lib/.cminus.objs/native -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -intf-suffix .ml -no-alias-deps -opaque -open Cminus -o lib/.cminus.objs/native/cminus__Interp.cmx -c -impl lib/interp.pp.ml)
 $ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/cminus.cmxa lib/.cminus.objs/native/cminus.cmx lib/.cminus.objs/native/cminus__Ast.cmx lib/.cminus.objs/native/cminus__Parser.cmx lib/.cminus.objs/native/cminus__Notes.cmx lib/.cminus.objs/native/cminus__Lexer.cmx lib/.cminus.objs/native/cminus__Failures.cmx lib/.cminus.objs/native/cminus__Interp.cmx)
-$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -o test/tests.exe /Users/jeremyzay/.opam/5.1.1/lib/ocaml/str/str.cmxa /Users/jeremyzay/.opam/5.1.1/lib/astring/astring.cmxa /Users/jeremyzay/.opam/5.1.1/lib/cmdliner/cmdliner.cmxa /Users/jeremyzay/.opam/5.1.1/lib/uutf/uutf.cmxa /Users/jeremyzay/.opam/5.1.1/lib/alcotest/stdlib_ext/alcotest_stdlib_ext.cmxa /Users/jeremyzay/.opam/5.1.1/lib/fmt/fmt.cmxa /Users/jeremyzay/.opam/5.1.1/lib/fmt/fmt_cli.cmxa /Users/jeremyzay/.opam/5.1.1/lib/re/re.cmxa /Users/jeremyzay/.opam/5.1.1/lib/stdlib-shims/stdlib_shims.cmxa /Users/jeremyzay/.opam/5.1.1/lib/alcotest/engine/alcotest_engine.cmxa /Users/jeremyzay/.opam/5.1.1/lib/ocaml/unix/unix.cmxa /Users/jeremyzay/.opam/5.1.1/lib/fmt/fmt_tty.cmxa /Users/jeremyzay/.opam/5.1.1/lib/alcotest/alcotest.cmxa -I /Users/jeremyzay/.opam/5.1.1/lib/alcotest /Users/jeremyzay/.opam/5.1.1/lib/yojson/yojson.cmxa /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime/ppx_deriving_runtime.cmxa lib/cminus.cmxa test/.tests.eobjs/native/dune__exe__Tests.cmx)
-$ (cd _build/default/test && ./tests.exe)
-> Testing `suites/00core'.
-> This run has ID `WP9U1VC3'.
->
->   [OK]          00get00.c                0   0.
->   [OK]          00get00.c                1   1.
->   [OK]          00main00.c               0   0.
->   [OK]          00print00.c              0   0.
->   [OK]          00prompt00.c             0   0.
->   [OK]          00prompt00.c             1   1.
->   [OK]          10ops_int00.c            0   0.
->   [OK]          15decs00.c               0   0.
->   [OK]          20assign00.c             0   0.
->   [FAIL]        25blocks00.c             0   0.
->   [FAIL]        30if00.c                 0   0.
->   [FAIL]        30if00.c                 1   1.
->   [FAIL]        35while00.c              0   0.
->   [OK]          40functions00.c          0   0.
->   [FAIL]        45earlyret00.c           0   0.
->   [OK]          50multdec00.c            0   0.
->   [OK]          50typeerr00.c            0   0.
->   [OK]          50undec00.c              0   0.
->
-> ┌─────────────────────────────────────────────────────────────────────────┐
-> │ [FAIL]        25blocks00.c             0   0.                           │
-> └─────────────────────────────────────────────────────────────────────────┘
-> Envs: x: 0
-> [failure] Unimplemented: Block
->           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
->           Called from Cminus__Interp.exec.exec_stms in file "lib/interp.ml", line 447, characters 16-33
->           Called from Cminus__Interp.exec.eval in file "lib/interp.ml", line 565, characters 20-39
->           Called from Cminus__Interp.exec in file "lib/interp.ml", line 595, characters 10-55
->           Called from Dune__exe__Tests.iotest in file "test/tests.ml", line 103, characters 15-43
->           Called from Alcotest_engine__Core.Make.protect_test.(fun) in file "src/alcotest-engine/core.ml", line 186, characters 17-23
->           Called from Alcotest_engine__Monad.Identity.catch in file "src/alcotest-engine/monad.ml", line 24, characters 31-35
->           
-> Logs saved to `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-00core/25blocks00.c.000.output'.
->  ─────────────────────────────────────────────────────────────────────────
->
->
-> ┌─────────────────────────────────────────────────────────────────────────┐
-> │ [FAIL]        30if00.c                 0   0.                           │
-> └─────────────────────────────────────────────────────────────────────────┘
-> Envs: b: true
-> [failure] Unimplemented: IfElse
->           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
->           Called from Cminus__Interp.exec.exec_stms in file "lib/interp.ml", line 447, characters 16-33
->           Called from Cminus__Interp.exec.eval in file "lib/interp.ml", line 565, characters 20-39
->           Called from Cminus__Interp.exec in file "lib/interp.ml", line 595, characters 10-55
->           Called from Dune__exe__Tests.iotest in file "test/tests.ml", line 103, characters 15-43
->           Called from Alcotest_engine__Core.Make.protect_test.(fun) in file "src/alcotest-engine/core.ml", line 186, characters 17-23
->           Called from Alcotest_engine__Monad.Identity.catch in file "src/alcotest-engine/monad.ml", line 24, characters 31-35
->           
-> Logs saved to `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-00core/30if00.c.000.output'.
->  ─────────────────────────────────────────────────────────────────────────
->
->
-> ┌─────────────────────────────────────────────────────────────────────────┐
-> │ [FAIL]        30if00.c                 1   1.                           │
-> └─────────────────────────────────────────────────────────────────────────┘
-> Envs: b: false
-> [failure] Unimplemented: IfElse
->           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
->           Called from Cminus__Interp.exec.exec_stms in file "lib/interp.ml", line 447, characters 16-33
->           Called from Cminus__Interp.exec.eval in file "lib/interp.ml", line 565, characters 20-39
->           Called from Cminus__Interp.exec in file "lib/interp.ml", line 595, characters 10-55
->           Called from Dune__exe__Tests.iotest in file "test/tests.ml", line 103, characters 15-43
->           Called from Alcotest_engine__Core.Make.protect_test.(fun) in file "src/alcotest-engine/core.ml", line 186, characters 17-23
->           Called from Alcotest_engine__Monad.Identity.catch in file "src/alcotest-engine/monad.ml", line 24, characters 31-35
->           
-> Logs saved to `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-00core/30if00.c.001.output'.
->  ─────────────────────────────────────────────────────────────────────────
->
->
-> ┌─────────────────────────────────────────────────────────────────────────┐
-> │ [FAIL]        35while00.c              0   0.                           │
-> └─────────────────────────────────────────────────────────────────────────┘
-> Envs: x: 0
-> [failure] Unimplemented: While
->           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
->           Called from Cminus__Interp.exec.exec_stms in file "lib/interp.ml", line 447, characters 16-33
->           Called from Cminus__Interp.exec.eval in file "lib/interp.ml", line 565, characters 20-39
->           Called from Cminus__Interp.exec in file "lib/interp.ml", line 595, characters 10-55
->           Called from Dune__exe__Tests.iotest in file "test/tests.ml", line 103, characters 15-43
->           Called from Alcotest_engine__Core.Make.protect_test.(fun) in file "src/alcotest-engine/core.ml", line 186, characters 17-23
->           Called from Alcotest_engine__Monad.Identity.catch in file "src/alcotest-engine/monad.ml", line 24, characters 31-35
->           
-> Logs saved to `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-00core/35while00.c.000.output'.
->  ─────────────────────────────────────────────────────────────────────────
->
->
-> ┌─────────────────────────────────────────────────────────────────────────┐
-> │ [FAIL]        45earlyret00.c           0   0.                           │
-> └─────────────────────────────────────────────────────────────────────────┘
-> [failure] Unimplemented: IfElse
->           Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
->           Called from Cminus__Interp.exec.exec_stms in file "lib/interp.ml", line 447, characters 16-33
->           Called from Cminus__Interp.exec.eval in file "lib/interp.ml", line 565, characters 20-39
->           Called from Stdlib__List.map in file "list.ml", line 83, characters 15-19
->           Called from Cminus__Interp.exec.eval in file "lib/interp.ml", line 572, characters 21-62
->           Called from Cminus__Interp.exec.exec_stm in file "lib/interp.ml", line 492, characters 14-32
->           Called from Cminus__Interp.exec.exec_stms in file "lib/interp.ml", line 447, characters 16-33
->           Called from Cminus__Interp.exec.eval in file "lib/interp.ml", line 565, characters 20-39
->           Called from Cminus__Interp.exec in file "lib/interp.ml", line 595, characters 10-55
->           Called from Dune__exe__Tests.iotest in file "test/tests.ml", line 103, characters 15-43
->           Called from Alcotest_engine__Core.Make.protect_test.(fun) in file "src/alcotest-engine/core.ml", line 186, characters 17-23
->           Called from Alcotest_engine__Monad.Identity.catch in file "src/alcotest-engine/monad.ml", line 24, characters 31-35
->           
-> Logs saved to `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-00core/45earlyret00.c.000.output'.
->  ─────────────────────────────────────────────────────────────────────────
->
-> Full test results in `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-00core'.
-> 5 failures! in 0.004s. 18 tests run.
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -o bin/cminus.exe /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime/ppx_deriving_runtime.cmxa lib/cminus.cmxa bin/.cminus.eobjs/native/dune__exe__Cminus.cmx)
