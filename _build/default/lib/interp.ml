@@ -403,11 +403,16 @@ let rec var_dec (eval) (rhos : EnvBlock.t) (rho : Env.t) (vds : (Ast.Id.t * Ast.
   (* need rhos to pass into eval, but does it make sense passing in rhos and rho separately? do it for simpler style *)
   (* I'll deal with the problem here, and catch the Value.V_None and convert it to Value.V_Undefined here? *)
   | (x, e_opt) :: vds' ->  
-    begin 
-      match e_opt with
-      | Some _ -> var_dec eval rhos ((x, eval rhos e_opt) :: rho)  vds'
-      | None -> var_dec eval rhos ((x, Value.V_Undefined) :: rho)  vds'
-    end
+    if Env.lookup rho x <> None then 
+      raise @@ MultipleDeclaration x
+    else
+      begin 
+        match e_opt with
+        | Some _ -> 
+          var_dec eval rhos ((x, eval rhos e_opt) :: rho)  vds'
+        | None -> 
+          var_dec eval rhos ((x, Value.V_Undefined) :: rho)  vds'
+      end
     (* this should solve the problem *)
     
   
