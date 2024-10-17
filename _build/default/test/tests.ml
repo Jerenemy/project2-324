@@ -84,6 +84,12 @@ let split (c : char) (s : string) : string list =
  * `expected`, and fails otherwise.
  *)
 let iotest test_file test_code input expected () : Alcotest.return =
+  Sys.set_signal Sys.sigalrm (
+    Sys.Signal_handle (
+      fun _ -> Alcotest.fail "Timeout!"
+    )
+  ) ;
+  ignore (Unix.alarm 5) ;
   Alcotest.(check (list string))
     test_file
     expected
@@ -109,6 +115,12 @@ let iotest test_file test_code input expected () : Alcotest.return =
  * to be fixed by an appropriate call to `Printexc.register_printer`.
  *)
 let extest test_file test_code input expected () : Alcotest.return =
+  Sys.set_signal Sys.sigalrm (
+    Sys.Signal_handle (
+      fun _ -> Alcotest.fail "Timeout!"
+    )
+  ) ;
+  ignore (Unix.alarm 5) ;
   Alcotest.(check (option string))
     test_file
     (Some expected)
@@ -269,10 +281,13 @@ let () =
      *)
     Printexc.register_printer (
       function
+      | Cminus.Interp.NoReturn _ -> Some "NoReturn"
       | Cminus.Interp.MultipleDeclaration _ -> Some "MultipleDeclaration"
       | Cminus.Interp.UnboundVariable _ -> Some "UnboundVariable"
       | Cminus.Interp.UndefinedFunction _ -> Some "UndefinedFunction"
       | Cminus.Interp.TypeError _ -> Some "TypeError"
+      | Cminus.Interp.OutOfMemoryError -> Some "OutOfMemoryError"
+      | Cminus.Interp.SegmentationError _ -> Some "SegmentationError"
       | _ -> None
     ) ;
 

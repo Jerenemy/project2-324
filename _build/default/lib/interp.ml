@@ -194,6 +194,11 @@ module Io = struct
 
 end
 
+
+
+
+
+
 module Env = struct
   type t = (Ast.Id.t * Value.t) list
 
@@ -216,16 +221,72 @@ module Env = struct
     | _ -> Failures.unimplemented "lookup"
 
   (* 
-  Env.assign (rho : Env.t) (x : Ast.Id.t) (v : Value.t) : (Env.t)
-
-  Assign the value v to the identifier x, updating the environment rho.
+  Env.declaration (rho : Env.t) (x : Ast.Id.t) (v : Value.t) : (Env.t)
+  FIX SPECIFICATION
+  NOT IN USE
+  Declare the value v to the identifier x, updating the environment rho.
  *)
-  let assign 
+  let declaration 
       (rho : t) 
       (x : Ast.Id.t) 
       (v: Value.t) : (t) = 
     (x, v) :: rho
 
+    (* i think using option type here is unneccessary *)
+  (* let rec update (rho) (x) (v) : t option =
+    match rho with
+    | (x',v') :: rho' -> 
+      if x = x' then Some ((x, v) :: rho')
+      else 
+        let rho_opt' = update rho' x v in 
+        begin
+          match rho_opt' with
+          | Some rho_some -> (x',v') :: (update rho' x v)
+          | None -> None
+        end
+          (x',v') :: (update rho' x v)
+    | [] -> None *)
+
+    (* just returns the updated enviroment  *)
+
+    let rec update (rho : t) (x : Ast.Id.t) (v : Value.t) : t option =
+      match rho with
+      | (x',v') :: rho' -> 
+        if x = x' then Some ((x, v) :: rho')
+
+        (* else, need to look in the rest of the interp, 
+        and if the recursive call returns Some, then the entire thing should be Some, 
+        but if the recursive call returns None, then the entire thing should be None. 
+        but can't cons the other vars back on if it's option type, so need to deconstruct it *)
+        
+        else 
+          let rho_opt = update rho' x v in 
+          begin
+            match rho_opt with
+            | Some rho_some -> Some ((x',v') :: rho_some)
+            | None -> None
+          end
+
+      | [] -> None 
+  
+
+    (* i DO need to return if it actually updated a variable, because if it does then i need to try to assign it in the next Env in EnvBlock
+      so return Some Env.t when updated
+    and return None when not updated *)
+  (* let rec update (rho : t) (x : Ast.Id.t) (v : Value.t) : t =
+    match rho with
+    | (x',v') :: rho' -> 
+      if x = x' then (x, v) :: rho'
+      else (x',v') :: (update rho' x v)
+    | [] -> [] *) 
+    (*shouldnt [] be Env.empty to be the correct type? *)
+
+  (* DEBUGGING *)
+  let show (rho : t) : string =
+    let bindings = List.map (fun (x, v) ->
+      Printf.sprintf "%s: %s" (x) (Value.to_string v)
+    ) rho in
+    String.concat ", " bindings
   
   
 end
@@ -239,6 +300,27 @@ module EnvBlock = struct
   empty = the new environment block, which is NOT actually empty: a list that contains only the empty environment.
    *)
   let empty : t = Envs [Env.empty]
+
+
+  let assign (rhos : t) (x : Ast.Id.t) (v : Value.t) : t = 
+    match rhos with
+    | Envs (rho :: rhos') -> 
+      (* if x in rho then update x to v, else rho :: assign rhos' x v *)
+      let rho_opt = Env.update rho x v in
+      begin
+        match rho_opt with
+        | Some rho' -> Envs (rho' :: rhos')
+        | None -> rhos
+      end
+
+    | Envs [] -> Failures.impossible "empty rhos"
+
+  (* DEBUGGING *)
+  let show (env_block : t) : string =
+    match env_block with
+    | Envs envs ->
+        let env_strings = List.map Env.show envs in
+        String.concat " | " env_strings
 end
 
 module Frame = struct
@@ -251,6 +333,48 @@ module Frame = struct
   let empty = Envs EnvBlock.empty
 end
 
+(* DEBUGGING *)
+let print_frame (frame : Frame.t) : unit =
+  match frame with
+  | Frame.Envs env_block ->
+      Printf.printf "Envs: %s\n" (EnvBlock.show env_block)
+  | Frame.Return v ->
+      Printf.printf "Return: %s\n" (Value.to_string v)
+
+
+let unop (op : Ast.Expr.unop) (v : Value.t) : Value.t =
+  match (op, v) with
+  | (Neg, V_Int n) -> V_Int (-n)
+  | (Not, V_Bool b) -> V_Bool (not b)
+  | _ ->  raise @@ TypeError (
+          Printf.sprintf "Bad operand types: %s %s"
+            (Ast.Expr.show_unop op) (Value.to_string v)
+          )
+        
+(* binop op v v' = the result of applying the metalanguage operation
+* corresponding to `op` to v and v'.
+*)
+let binop (op : Ast.Expr.binop) (v : Value.t) (v' : Value.t) : Value.t =
+  match (op, v, v') with
+  | (Plus, Value.V_Int n, Value.V_Int n') -> Value.V_Int (n + n')
+  | (Minus, Value.V_Int n, Value.V_Int n') -> Value.V_Int (n - n')
+  | (Times, Value.V_Int n, Value.V_Int n') -> Value.V_Int (n * n')
+  | (Div, Value.V_Int n, Value.V_Int n') -> Value.V_Int (n / n')
+  | (Mod, Value.V_Int n, Value.V_Int n') -> Value.V_Int (n mod n')
+  | (And, Value.V_Bool b, Value.V_Bool b') -> Value.V_Bool (b && b')
+  | (Or, Value.V_Bool b, Value.V_Bool b') -> Value.V_Bool (b || b')
+  | (Eq, v, v') -> Value.V_Bool (v = v')
+  | (Ne, v, v') -> Value.V_Bool (v <> v')
+  | (Lt, Value.V_Int n, Value.V_Int n') -> Value.V_Bool (n < n')
+  | (Le, Value.V_Int n, Value.V_Int n') -> Value.V_Bool (n <= n')
+  | (Gt, Value.V_Int n, Value.V_Int n') -> Value.V_Bool (n > n')
+  | (Ge, Value.V_Int n, Value.V_Int n') -> Value.V_Bool (n >= n')
+  | _ ->  raise @@ 
+          TypeError (
+            Printf.sprintf "Bad operand types: %s %s %s"
+              (Value.to_string v) (Ast.Expr.show_binop op) (Value.to_string v')
+          )
+        
 let rec var_dec (eval) (rhos) (rho) (vds) : Env.t = 
   let _ = eval in
   let _ = rho in
@@ -263,7 +387,8 @@ let rec var_dec (eval) (rhos) (rho) (vds) : Env.t =
 
   (* Failures.unimplemented "var_dec" *)
   
-let rec exec_stm (eval) (rhos) (stm)  : Frame.t = 
+(* put this as a mutually recursive in exec, paired with exec_stms *)
+let exec_stm (eval) (rhos) (stm)  : Frame.t = 
   (* let _ = eval in
   let _ = rhos in
   let _ = stm in *)
@@ -277,14 +402,22 @@ let rec exec_stm (eval) (rhos) (stm)  : Frame.t =
         let rho' = var_dec eval rhos rho vds in
         let new_rhos = EnvBlock.Envs (rho' :: rhos_tail) in
         (* this should return a frame here, and then the rest of the stms should be executed in exec_stms *)
-        Frame.Envs new_rhos
+        let frame = Frame.Envs new_rhos in 
+        let _ = print_frame frame in 
+        frame 
       | _ -> Failures.impossible "empty rhos"
     end
     
 
   | Ast.Stm.ArrayDec (_ :: _) -> Failures.unimplemented "exec_stms ArrayDec"
-  
-  | Ast.Stm.Assign (_, _) -> Failures.unimplemented "exec_stms Assign"
+
+  (* (Ast.Stm.Assign ("x", (Ast.Expr.Num 1))) *)
+  | Ast.Stm.Assign (x, e) -> 
+    let v = eval rhos (Some e) in (* Some e, because never assigning a variable an undefined value, right? *)
+    Frame.Envs (EnvBlock.assign rhos x v)
+
+    (* Failures.unimplemented "exec_stms Assign" *)
+
 
   | Ast.Stm.IndexAssign (_, _, _) -> Failures.unimplemented "exec_stms IndexAssign"
 
@@ -293,7 +426,7 @@ let rec exec_stm (eval) (rhos) (stm)  : Frame.t =
     (* ERROR This expression has type Ast.Expr.t but an expression was expected of type
   Ast.Expr.t option *)
     let _ = eval rhos (Some e) in (* VERIFY: is e always Some, never None? *)
-    exec_stm (eval) (rhos) (stm) (* VERIFY: is exec_stm recursive or not?*)
+    Frame.Envs rhos  (* Continue with the same environment *)
 
   | Ast.Stm.Return None ->
     Frame.Return Value.V_None 
@@ -347,6 +480,11 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     begin 
       match e with  
       | Num n -> V_Int n
+      | Bool b -> Value.V_Bool b
+      | Unop (op, e) ->
+        unop op (eval rhos (Some e)) (* is the Some necessary, or are we just doing it blindly for no reason? *)
+      | Binop (op, e, e') ->
+        binop op (eval rhos (Some e)) (eval rhos (Some e'))
       (* is es of type Ast.Expr.t option? es is a list of arguments.  *)
       | Call(f, es) -> 
         begin
@@ -362,10 +500,13 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
             (* verify with Fernando *)
             let vs = List.map (fun e -> eval rhos (Some e)) es in (* each e in es needs to be type Ast.Expr.t option *)
             try 
+              (* do_call gets called in an infinite loop FIXED!!! *)
+              (* let _ = print_string "Io.do_call" in *)
               Io.do_call f vs
             with Io.ApiError _ -> raise @@ UndefinedFunction f 
         end
-
+      
+      
       | _ -> Failures.unimplemented (
         Printf.sprintf "eval: %s" (Ast.Expr.show e)
       ) 

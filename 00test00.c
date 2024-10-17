@@ -15,7 +15,7 @@
 #include "cminus.h"
 
 void main() {
-    int x ;
+    int x = (1+2);
     /* need function to print rhos to verify this works... is that possible? */
     return ;
 }

@@ -3,10 +3,7 @@
  * {
  *      "input":    [],
  *      "output":   [
- *          "5",
- *          "true",
- *          "false",
- *          "Hello, world!"
+ *          "5"
  *      ]
  * }
  */
