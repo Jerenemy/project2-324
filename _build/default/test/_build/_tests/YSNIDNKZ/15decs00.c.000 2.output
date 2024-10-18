@@ -1,0 +1,4 @@
+Envs: x: ? | 
+Envs: b: ?, x: ? | 
+Envs: s: ?, b: ?, x: ? | 
+[33mASSERT[0m suites/00core/15decs00.c
