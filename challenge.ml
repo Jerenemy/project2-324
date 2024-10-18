@@ -60,3 +60,40 @@ module Store = struct
       Array.set store.store location value
 end
 
+
+
+
+| Call(f, es) -> 
+  begin
+    try
+      (* Retrieve parameters and body *)
+      let params, stms = get_body_and_params f in
+
+      (* Evaluate all argument expressions *)
+      let args = List.map (fun e -> eval store rhos (Some e)) es in
+
+      (* Check if the number of arguments matches the number of parameters *)
+      if List.length params <> List.length args then
+        raise @@ TypeError "Incorrect number of arguments"
+      else
+        (* Create a new environment binding parameters to arguments *)
+        let param_bindings = List.combine params args in
+        let new_rho = List.fold_left (fun acc (param, arg) ->
+          (param, arg) :: acc
+        ) [] param_bindings in
+
+        (* Push the new environment onto the environment block *)
+        let new_rhos = EnvBlock.Envs (new_rho :: (match rhos with Envs envs -> envs)) in
+
+        (* Execute the function body with the new environment *)
+        match exec_stms store stms new_rhos with
+        | Return v -> v
+        | Envs _ -> raise @@ NoReturn f
+    with
+    | UndefinedFunction f -> 
+      (* Handle API functions *)
+      let vs = List.map (fun e -> eval store rhos (Some e)) es in
+      try 
+        Io.do_call f vs
+      with Io.ApiError _ -> raise @@ UndefinedFunction f 
+  end

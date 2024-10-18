@@ -445,7 +445,7 @@ let binop (op : Ast.Expr.binop) (v : Value.t) (v' : Value.t) : Value.t =
               (Value.to_string v) (Ast.Expr.show_binop op) (Value.to_string v')
           )
         
-let rec var_dec (eval) (rhos : EnvBlock.t) (rho : Env.t) (vds : (Ast.Id.t * Ast.Expr.t option) list) : Env.t = 
+let rec var_dec (eval) (store : Store.t) (rhos : EnvBlock.t) (rho : Env.t) (vds : (Ast.Id.t * Ast.Expr.t option) list) : Env.t = 
   match vds with
   | [] -> rho (* base case *)
   (* need rhos to pass into eval, but does it make sense passing in rhos and rho separately? do it for simpler style *)
@@ -457,26 +457,44 @@ let rec var_dec (eval) (rhos : EnvBlock.t) (rho : Env.t) (vds : (Ast.Id.t * Ast.
       begin 
         match e_opt with
         | Some _ -> 
-          var_dec eval rhos ((x, eval rhos e_opt) :: rho)  vds'
+          var_dec eval store rhos ((x, eval store rhos e_opt) :: rho)  vds'
         | None -> 
-          var_dec eval rhos ((x, Value.V_Undefined) :: rho)  vds'
+          var_dec eval store rhos ((x, Value.V_Undefined) :: rho)  vds'
       end
     (* this should solve the problem - it did *)
-    
-  
+   
+(* INSERT SPECIFICATION *)
+let rec arr_dec (eval) (store : Store.t) (rhos : EnvBlock.t) (rho : Env.t) (ads : (Ast.Id.t * Ast.Expr.t) list) : Env.t =
+  match ads with
+  | [] -> rho (* base case *)
+  | (x, e) :: ads' -> 
+    if Env.lookup rho x <> None then
+      raise @@ MultipleDeclaration x
+    else
+      (* get starting loc for this arr, pair that with x, add that to rho *)
+      let v_size = eval store rhos (Some e) in
+      begin 
+        match v_size with
+        | Value.V_Int size -> 
+          (* allocate reserves space in store, and returns starting value as Value.V_Loc *)
+          let start = Store.allocate store size in
+          arr_dec eval store rhos ((x, start) :: rho) ads'
+        | _ -> raise @@ TypeError "array size must be of int"
+      end
+        
 
-
+    (* do we need to change lookup? how does lookup handle arrays? or does it even? it does. *)
 
 (* exec p:  Execute the program `p`.
  *)
 let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
 
-  let get_body (f : Ast.Id.t) : Ast.Stm.t list = 
-    let rec find_body (fundefs : Ast.Prog.fundef list) : Ast.Stm.t list = 
+  let get_body_and_params (f : Ast.Id.t) : (Ast.Stm.t list * Ast.Id.t list) = 
+    let rec find_body (fundefs : Ast.Prog.fundef list) : (Ast.Stm.t list * Ast.Id.t list) = 
       match fundefs with
       | [] -> raise @@ UndefinedFunction f
-      | FunDef(g, _, body) :: fundefs' -> 
-        if g = f then body 
+      | FunDef(g, params, body) :: fundefs' -> 
+        if g = f then (body, params)
         else find_body fundefs' 
     in
       find_body fundefs
@@ -488,30 +506,29 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     are the block statemenet returns handeled here? 
   (when a block statement concludes, it returns a ReturnFrame? or when a function concludes?) 
   *)
-  let rec exec_stms (stms : Ast.Stm.t list) (rhos : EnvBlock.t) : Frame.t =
+  let rec exec_stms (store : Store.t) (stms : Ast.Stm.t list) (rhos : EnvBlock.t) : Frame.t =
     match stms with 
     | [] -> Frame.Envs rhos
     | stm :: stms' ->
-      let eta = exec_stm rhos stm 
+      let eta = exec_stm store rhos stm 
       in
         begin 
           match eta with
           | Return rf -> 
             Return rf
           | Envs rhos' -> 
-            exec_stms stms' rhos'
+            exec_stms store stms' rhos'
         end 
 
     (* put this as a mutually recursive in exec, paired with exec_stms *)
-  and exec_stm (rhos) (stm)  : Frame.t = 
+  and exec_stm (store : Store.t) (rhos : EnvBlock.t) (stm : Ast.Stm.t)  : Frame.t = 
   
     match stm with 
     | VarDec vds -> 
-      let _ = vds in
       begin
         match rhos with
         | Envs (rho :: rhos_tail) ->
-          let rho' = var_dec eval rhos rho vds in
+          let rho' = var_dec eval store rhos rho vds in
           let new_rhos = EnvBlock.Envs (rho' :: rhos_tail) in
           (* this should return a frame here, and then the rest of the stms should be executed in exec_stms *)
           let frame = Frame.Envs new_rhos in 
@@ -520,14 +537,24 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
         | _ -> Failures.impossible "empty rhos"
       end
       
-  
-    | ArrayDec (_ :: _) -> 
+    (* ArrayDec of (Id.t * Expr.t) list *)
+    | ArrayDec ads ->
+      begin
+        match rhos with
+        | Envs (rho :: rhos_tail) -> 
+          let rho' = arr_dec eval store rhos rho ads in
+          let new_rhos = EnvBlock.Envs (rho' :: rhos_tail) in
+          let frame = Frame.Envs new_rhos in
+          let _ = print_frame frame in
+          frame
+        | _ -> Failures.impossible "empty rhos"
+      end
       
-      Failures.unimplemented "exec_stms ArrayDec"
+      (* Failures.unimplemented "exec_stms ArrayDec" *)
   
     (* (Ast.Stm.Assign ("x", (Ast.Expr.Num 1))) *)
     | Assign (x, e) -> 
-      let v = eval rhos (Some e) in (* Some e, because never assigning a variable an undefined value, right? *)
+      let v = eval store rhos (Some e) in (* Some e, because never assigning a variable an undefined value, right? *)
       Frame.Envs (EnvBlock.assign rhos x v)
   
       (* Failures.unimplemented "exec_stms Assign" *)
@@ -539,7 +566,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       (* need to pass a val of type EnvBlock into eval, not Frame *)
       (* ERROR This expression has type Ast.Expr.t but an expression was expected of type
       Ast.Expr.t option *)
-      let _ = eval rhos (Some e) in (* VERIFY: is e always Some, never None? *)
+      let _ = eval store rhos (Some e) in (* VERIFY: is e always Some, never None? *)
       (* stm expr execution doesn't change the frame, maybe has a side effect (like print) *)
       Frame.Envs rhos  (* Continue with the same environment *)
   
@@ -548,7 +575,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       (* to evaluate stm list given by block just push new empty env on top of rhos and pop it back off at the end *)
       let EnvBlock.Envs rhos_list = rhos in
       (* does the new env get popped off the list once exec_stms is done? it needs to one way or another. *)
-      let block_frame = exec_stms stms (EnvBlock.Envs (Env.empty :: rhos_list)) in
+      let block_frame = exec_stms store stms (EnvBlock.Envs (Env.empty :: rhos_list)) in
       begin 
         match block_frame with
         (* delete top env if returns another list of envs *)
@@ -565,12 +592,12 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     (* does it matter what type of expr each branch is?
      *)
     | IfElse (e, s, s') -> 
-      let v = eval rhos (Some e) in
+      let v = eval store rhos (Some e) in
       begin
         match v with
         | Value.V_Bool b -> 
-          if b then exec_stm rhos s 
-          else exec_stm rhos s'
+          if b then exec_stm store rhos s 
+          else exec_stm store rhos s'
         | _ -> raise @@ TypeError "non bool test case given to IfElse"
       end
       (* Failures.unimplemented "IfElse" *)
@@ -578,7 +605,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     (* `while e s` parses to While(e, s).
        *)
     | While (e, s) -> 
-      let v = eval rhos (Some e) in
+      let v = eval store rhos (Some e) in
       begin
         match v with
         | Value.V_Bool b -> 
@@ -592,14 +619,14 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
              * When the Block s is executed, a new env is pushed onto rhos and then popped off, and vars in rhos may / may not have been updated.
              * This reflects the While operational semantics.
              *)
-            let rhos' = (exec_stm rhos s) in
+            let rhos' = (exec_stm store rhos s) in
             begin 
               (* check if there was a return in the While block. 
                * If no return, re-evaluate block expr with rhos'
                * If return, return frame val
                *)
               match rhos' with
-              | Envs rhos_envblock -> exec_stm rhos_envblock (Ast.Stm.While (e, s))
+              | Envs rhos_envblock -> exec_stm store rhos_envblock (Ast.Stm.While (e, s))
               | Return v -> Frame.Return v
             end
           else Frame.Envs rhos
@@ -609,7 +636,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
   
     (* what is the type of return? is it an expression or expr option? sometimes it is None, right? *)
     | Return e_opt ->
-      Frame.Return (eval rhos e_opt) (* FIRST MAJOR PROBLEM:  this sho*)
+      Frame.Return (eval store rhos e_opt) (* FIRST MAJOR PROBLEM:  this sho*)
       (* begin
         match e_opt with
         | Some e -> 
@@ -624,14 +651,14 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       let _ = v in
       Failures.unimplemented "Return e" *)
     (* | Ast.Stm.Return None -> *)
-    | _ -> Failures.impossible "uncaught case!"
+    (* | _ -> Failures.impossible "uncaught case!" *)
     
     
       
   
   (* instead of eta, paass rhos (envblock) because never evaluate exprs under Frame.Return  *)
   (* e : Ast.Expr.t option, when SOME, eval expr, when NONE, return V_Undefined (because eval-ing expr of a VarDec stm, when NONE, no val assigned) *)
-  and eval (rhos : EnvBlock.t) (e_opt : Ast.Expr.t option) : Value.t =
+  and eval (store : Store.t) (rhos : EnvBlock.t) (e_opt : Ast.Expr.t option) : Value.t =
     match e_opt with
     | Some e ->
     begin 
@@ -650,23 +677,37 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       (* `s` parses to String s for strings s. *)
       | Str s -> V_Str s
       | Unop (op, e) ->
-        unop op (eval rhos (Some e)) (* is the Some necessary, or are we just doing it blindly for no reason? *)
+        unop op (eval store rhos (Some e)) (* is the Some necessary, or are we just doing it blindly for no reason? *)
       | Binop (op, e, e') ->
-        binop op (eval rhos (Some e)) (eval rhos (Some e'))
+        binop op (eval store rhos (Some e)) (eval store rhos (Some e'))
       (* is es of type Ast.Expr.t option? es is a list of arguments.  *)
       | Call(f, es) -> 
         begin
           try
-            let stms = get_body f in
-            begin 
-              match exec_stms stms rhos with
-              | Envs _ -> Failures.impossible "Function didn't execute return!"
-              | Return v -> v
-            end
+            let body_stms, params = get_body_and_params f in
+            (* Check if the number of arguments matches the number of parameters *)
+            if List.length params <> List.length es then
+              raise @@ TypeError "Incorrect number of arguments"
+            else
+              (* create new env 
+              start by evaluating the arg list. (need to convert the arg e to option type) *)
+              let args = List.map (fun e -> eval store rhos (Some e)) es in
+              (* then pair params with eval'd args *)
+              let param_bindings = List.combine params args in
+              (* create a new environment binding parameters to arguments *)
+              let new_rho = List.fold_left 
+                              (fun acc (param, arg) -> (param, arg) :: acc) 
+                              [] param_bindings in
+              let EnvBlock.Envs rhos_list = rhos in
+              begin 
+                match exec_stms store body_stms (EnvBlock.Envs (new_rho :: rhos_list)) with
+                | Envs _ -> Failures.impossible "Function didn't execute return!"
+                | Return v -> v
+              end
           with
           | UndefinedFunction f -> 
             (* verify with Fernando *)
-            let vs = List.map (fun e -> eval rhos (Some e)) es in (* each e in es needs to be type Ast.Expr.t option *)
+            let vs = List.map (fun e -> eval store rhos (Some e)) es in (* each e in es needs to be type Ast.Expr.t option *)
             try 
               (* do_call gets called in an infinite loop FIXED!!! *)
               (* let _ = print_string "Io.do_call" in *)
@@ -689,7 +730,8 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     *)
   in
   (* create store here *)
-  let _ = eval EnvBlock.empty (Some (Call("main", []))) in (* needs to be arg of option type here too *)
+  let store = Store.create_store in
+  let _ = eval store EnvBlock.empty (Some (Call("main", []))) in (* needs to be arg of option type here too *)
   ()
 
 

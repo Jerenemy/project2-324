@@ -1,0 +1,4 @@
+Envs: x: -10 | 
+Envs: b: true, x: -10 | 
+Envs: s: 3, b: true, x: -10 | 
+[33mASSERT[0m suites/90lobster/00prompt003.c
