@@ -15,9 +15,8 @@ void main() {
     while (x < 4) {
         print_int(x) ;
         x = x + 1 ;
-    }
-    
 
+    }
     return ;
 }
 

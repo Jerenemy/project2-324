@@ -12,7 +12,5 @@
 void main() {
     int xs [0] ;
     print_int(xs[0]) ;
-
-    return ;
 }
 

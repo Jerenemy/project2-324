@@ -10,9 +10,8 @@
 #include "cminus.h"
 
 void main() {
-    int x = 1 ;
-    print_int(1) ;
-
-    return ;
+    int x[50] ;
+    int y[55] ;
+    int z[60] ;
+    return;
 }
-

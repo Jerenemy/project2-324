@@ -178,8 +178,6 @@ void merge_consecutive(int xs[], int n, int sn) {
         merge(xs, i * two_to_the(sn + 1), two_to_the(sn)) ;
         i = i + 1;  /* UPDATE */
     }
-
-    return ;
 }
 
 /* merge_sort(xs, n):
@@ -194,17 +192,4 @@ void merge_sort(int xs[], int n) {
         merge_consecutive(xs, n, i) ;
         i = i + 1;  /* UPDATE */
     }
-
-    return ;
-}
-
-
-void main() {
-    int n = 5;
-    /* 
-    int xs[5] = {2, 3, 1, 9, 3} ;
-    merge_sort(xs, n) ;
-    */
-
-    return ;
 }

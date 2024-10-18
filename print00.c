@@ -11,7 +11,9 @@
 #include "cminus.h"
 
 void main() {
-    print_int(5) ;
+    int xs[2] ;
+    xs[0] = 1 ;
+
 
     return ;
 

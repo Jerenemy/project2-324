@@ -1,7 +1,7 @@
 /*!tests!
  *
  * {
- *      "input":    ["10"],
+ *      "input":    ["5"],
  *       "exception": "TypeError"
  *      * }
  *

@@ -14,7 +14,5 @@ void main() {
     char* s = "hello" ;
 
     print_int(x + s) ;
-
-    return ;
 }
 

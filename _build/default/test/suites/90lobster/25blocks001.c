@@ -11,14 +11,13 @@
 
 int f() {
     int x = 5 ;
-
-    return x ;
+    return x;
 }
 
 void main() {
     int y = f() ;
     print_int(y) ;
 
-    return ;
+    return;
 }
 

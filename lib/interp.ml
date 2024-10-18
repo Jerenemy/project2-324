@@ -556,14 +556,39 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     | Assign (x, e) -> 
       let v = eval store rhos (Some e) in (* Some e, because never assigning a variable an undefined value, right? *)
       Frame.Envs (EnvBlock.assign rhos x v)
-  
-      (* Failures.unimplemented "exec_stms Assign" *)
-  
-  
-    | IndexAssign (_, _, _) -> Failures.unimplemented "exec_stms IndexAssign"
+      
+      (* xs[0] = 1 ; *)
+      (* (Ast.Stm.IndexAssign ("xs", (Ast.Expr.Num 0), (Ast.Expr.Num 1))); *)
+      (* Id.t * Expr.t * Expr.t
+      IndexAssign(xs, e, e')
+       *)
+    | IndexAssign (xs, e, e') -> 
+      (* eval both exprs
+      lookup xs in rhos
+      set the val at v to be v'
+      return the (unchanged) rhos frame
+      need to pass location + index assigning to to set
+       *)
+      let v = eval store rhos (Some e) in
+      let v' = eval store rhos (Some e') in
+      begin
+        match v with
+        | Value.V_Int index -> 
+          let xs_loc = EnvBlock.lookup rhos xs in
+          begin
+            match xs_loc with
+            | Value.V_Loc xs_loc_int ->
+              let _ = Store.set store (xs_loc_int + index) v' in 
+              Frame.Envs rhos
+            | _ -> Failures.impossible "xs must be type V_Loc when stored in rhos "
+          end
+        | _ -> raise @@ TypeError "array index must be int"
+      end
+
+      (* Failures.unimplemented "exec_stms IndexAssign" *)
   
     | Expr e ->
-      (* need to pass a val of type EnvBlock into eval, not Frame *)
+      (* need  to pass a val of type EnvBlock into eval, not Frame *)
       (* ERROR This expression has type Ast.Expr.t but an expression was expected of type
       Ast.Expr.t option *)
       let _ = eval store rhos (Some e) in (* VERIFY: is e always Some, never None? *)

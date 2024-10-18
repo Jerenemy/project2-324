@@ -1,8 +1,8 @@
 /*!tests!
  *
  * {
- *    "input":    ["f", "true", "5"],
- *    "output":   ["f", "true", "5"]
+ *    "input":    ["3", "true", "5"],
+ *    "output":   ["3", "true", "5"]
  * }
  *
  */
@@ -18,6 +18,6 @@ void main() {
     print_bool(b) ;
     print_int(x) ;
 
-    return ;
+    return;
 }
 

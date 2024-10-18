@@ -11,7 +11,5 @@
 
 void main() {
     print_int(x) ;
-
-    return ;
 }
 

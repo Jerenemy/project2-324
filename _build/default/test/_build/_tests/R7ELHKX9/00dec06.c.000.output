@@ -1,0 +1,4 @@
+Envs: xs: 2 | 
+Envs: xs: 7, x: 1 | xs: 2 | 
+Envs: x: 7, xs: 2 | 
+[33mASSERT[0m suites/90lobster/00dec06.c

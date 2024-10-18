@@ -19,7 +19,5 @@ void main() {
 
     int x = 2 ;
     print_int(x) ;
-
-    return ;
 }
 
