@@ -10,7 +10,7 @@
 #include "cminus.h"
 
 void main() {
-    int x = 4294967295 ;
+    int x = 1 ;
     print_int(1) ;
 
     return ;

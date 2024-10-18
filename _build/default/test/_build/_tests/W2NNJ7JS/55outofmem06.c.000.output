@@ -1,4 +1,4 @@
-Envs: x: 10000000000000
+Envs: x: 1
 [33mASSERT[0m suites/90lobster/55outofmem06.c
 [31mFAIL[0m suites/90lobster/55outofmem06.c
 

@@ -1,6 +1,6 @@
-Envs: x: 4294967296
-[33mASSERT[0m suites/90lobster/55outofmem05.c
-[31mFAIL[0m suites/90lobster/55outofmem05.c
+Envs: x: 1
+[33mASSERT[0m suites/90lobster/55outofmem02.c
+[31mFAIL[0m suites/90lobster/55outofmem02.c
 
    Expected: `[32mSome "OutOfMemoryError"[0m'
    Received: `[31mNone[0m'

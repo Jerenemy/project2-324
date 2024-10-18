@@ -45,6 +45,7 @@ module Value = struct
     | V_Int of int
     | V_Bool of bool
     | V_Str of string
+    | V_Loc of int (*--- location of pointers TO STORE*)
     [@@deriving show]
 
   (* to_string v = a string representation of v (more human-readable than
@@ -57,6 +58,7 @@ module Value = struct
     | V_Int n -> Int.to_string n
     | V_Bool b -> Bool.to_string b
     | V_Str s -> s
+    | V_Loc p -> Int.to_string p
 end
 
 
@@ -196,8 +198,54 @@ end
 
 
 
+(* is every single item in the store going to be of type V_Loc?
+yes, so we can compare them directly *)
+module Store = struct
+  type t = (Value.t Array.t * int ref)
 
+  (* Initialize store with every value of type V_Undefined
+  then when indexed, immediately get correct val
+  *)
+  let store_arr : Value.t Array.t = Array.make 100 Value.V_Undefined
 
+  (* type int ref to globally keep track of next available mem. 
+   * works like a pointer: needs to be dereferenced and updated with reference assignment.
+   *)
+  let next_free : int ref = ref 0
+
+  let create_store : t = (store_arr, next_free)
+
+  (* Allocates a block of memory for a declared array and returns the starting location *)
+  let allocate (store : t) (size : int) : Value.t =
+    let store_arr, next_free = store in 
+    (* dereference next_free with ! *)
+    let current_loc = !(next_free) in
+    if current_loc + size > Array.length store_arr then
+      raise @@ OutOfMemoryError
+    else
+      (* update next_free by reference assignment := *)
+      let _ = next_free := current_loc + size in
+    Value.V_Loc current_loc
+
+  (* gets a value from a specific memory location *)
+  let get (store : t) (loc : int) : Value.t = 
+    let store_arr, next_free = store in 
+    if loc < 0 || loc >= !(next_free) then
+      raise @@ SegmentationError loc
+    else 
+      (* get store_arr[loc] *)
+      Array.get store_arr loc
+    
+  (* sets a value at a specific memory location *)
+  let set (store : t) (loc : int) (v : Value.t) : unit = 
+    let store_arr, next_free = store in 
+    if loc < 0 || loc >= !(next_free) then
+      raise @@ SegmentationError loc
+    else 
+      (* set store_arr[loc] = v *)
+      Array.set store_arr loc v
+
+end 
 
 module Env = struct
   type t = (Ast.Id.t * Value.t) list
@@ -473,7 +521,9 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       end
       
   
-    | ArrayDec (_ :: _) -> Failures.unimplemented "exec_stms ArrayDec"
+    | ArrayDec (_ :: _) -> 
+      
+      Failures.unimplemented "exec_stms ArrayDec"
   
     (* (Ast.Stm.Assign ("x", (Ast.Expr.Num 1))) *)
     | Assign (x, e) -> 
@@ -552,7 +602,6 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
               | Envs rhos_envblock -> exec_stm rhos_envblock (Ast.Stm.While (e, s))
               | Return v -> Frame.Return v
             end
-          (* if b then exec_stm     (Ast.Stm.While (e, s)) *)
           else Frame.Envs rhos
         | _ -> raise @@ TypeError "non bool test case given to While"
       end
@@ -639,7 +688,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     that is not allowed, since can only declare vars of type int, str, and bool (I think?) 
     *)
   in
-
+  (* create store here *)
   let _ = eval EnvBlock.empty (Some (Call("main", []))) in (* needs to be arg of option type here too *)
   ()
 
