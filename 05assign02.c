@@ -29,6 +29,7 @@ void main() {
         print_int(x[0]) ;
         print_int(x[1]) ;
         print_int(x[2]) ; /* this here might fail, not sure if x[2] is in scope */
+
     }
 
     print_int(x[0]) ;

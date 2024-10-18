@@ -693,10 +693,23 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       | Var x -> EnvBlock.lookup rhos x
       (* `xs[e]` parses to Index(xs, e)
       *)
-      | Index (x, e) -> 
-        let _ = x in
-        let _ = e in
-        Failures.unimplemented "Index xs[e]"
+      | Index (xs, e) ->
+        let v_index = eval store rhos (Some e) in
+        begin 
+          match v_index with
+          | Value.V_Int index -> 
+            if index >= 0 then
+              let v_start = EnvBlock.lookup rhos xs in
+              begin 
+                match v_start with
+                | Value.V_Loc start -> 
+                  Store.get store (start+index)
+                | _ -> Failures.impossible "xs always stored in rhos with type V_Loc"
+              end
+            else raise @@ SegmentationError index
+          | _ -> raise @@ TypeError "index must be int"
+        end
+        
       | Num n -> V_Int n
       | Bool b -> V_Bool b
       (* `s` parses to String s for strings s. *)

@@ -1,4 +1,4 @@
-# dune exec cminus exec 00dec06.c
+# dune test
 # OCAMLPARAM: unset
 # Shared cache: disabled
 # Shared cache location: /Users/jeremyzay/.cache/dune/db
@@ -13,4 +13,110 @@
 #  ; build_dir = In_build_dir "default"
 #  ; instrument_with = []
 #  }
-$ /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -config > /var/folders/r0/d5kdxg1j5gx_vp9lqdkcxvzh0000gn/T/dune_02af30_output
+$ /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -config > /var/folders/r0/d5kdxg1j5gx_vp9lqdkcxvzh0000gn/T/dune_6466af_output
+$ (cd _build/.sandbox/a3fd06a01ac27da5d5b160698a2a96e8/default && .ppx/0bb5094b13567c3c4e1ee33245b80e63/ppx.exe --cookie 'library-name="cminus"' -o lib/interp.pp.ml --impl lib/interp.ml -corrected-suffix .ppx-corrected -diff-cmd - -dump-ast)
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamldep.opt -modules -impl lib/interp.pp.ml) > _build/default/lib/.cminus.objs/cminus__Interp.impl.d
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I lib/.cminus.objs/byte -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -no-alias-deps -opaque -open Cminus -o lib/.cminus.objs/byte/cminus__Interp.cmo -c -impl lib/interp.pp.ml)
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I lib/.cminus.objs/byte -I lib/.cminus.objs/native -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -intf-suffix .ml -no-alias-deps -opaque -open Cminus -o lib/.cminus.objs/native/cminus__Interp.cmx -c -impl lib/interp.pp.ml)
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/cminus.cmxa lib/.cminus.objs/native/cminus.cmx lib/.cminus.objs/native/cminus__Ast.cmx lib/.cminus.objs/native/cminus__Parser.cmx lib/.cminus.objs/native/cminus__Notes.cmx lib/.cminus.objs/native/cminus__Lexer.cmx lib/.cminus.objs/native/cminus__Failures.cmx lib/.cminus.objs/native/cminus__Interp.cmx)
+$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -o test/tests.exe /Users/jeremyzay/.opam/5.1.1/lib/ocaml/str/str.cmxa /Users/jeremyzay/.opam/5.1.1/lib/astring/astring.cmxa /Users/jeremyzay/.opam/5.1.1/lib/cmdliner/cmdliner.cmxa /Users/jeremyzay/.opam/5.1.1/lib/uutf/uutf.cmxa /Users/jeremyzay/.opam/5.1.1/lib/alcotest/stdlib_ext/alcotest_stdlib_ext.cmxa /Users/jeremyzay/.opam/5.1.1/lib/fmt/fmt.cmxa /Users/jeremyzay/.opam/5.1.1/lib/fmt/fmt_cli.cmxa /Users/jeremyzay/.opam/5.1.1/lib/re/re.cmxa /Users/jeremyzay/.opam/5.1.1/lib/stdlib-shims/stdlib_shims.cmxa /Users/jeremyzay/.opam/5.1.1/lib/alcotest/engine/alcotest_engine.cmxa /Users/jeremyzay/.opam/5.1.1/lib/ocaml/unix/unix.cmxa /Users/jeremyzay/.opam/5.1.1/lib/fmt/fmt_tty.cmxa /Users/jeremyzay/.opam/5.1.1/lib/alcotest/alcotest.cmxa -I /Users/jeremyzay/.opam/5.1.1/lib/alcotest /Users/jeremyzay/.opam/5.1.1/lib/yojson/yojson.cmxa /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime/ppx_deriving_runtime.cmxa lib/cminus.cmxa test/.tests.eobjs/native/dune__exe__Tests.cmx)
+$ (cd _build/default/test && ./tests.exe)
+> Testing `suites/00core'.
+> This run has ID `YSNIDNKZ'.
+>
+>   [OK]          00get00.c                0   0.
+>   [OK]          00get00.c                1   1.
+>   [OK]          00main00.c               0   0.
+>   [OK]          00print00.c              0   0.
+>   [OK]          00prompt00.c             0   0.
+>   [OK]          00prompt00.c             1   1.
+>   [OK]          10ops_int00.c            0   0.
+>   [OK]          15decs00.c               0   0.
+>   [OK]          20assign00.c             0   0.
+>   [OK]          25blocks00.c             0   0.
+>   [OK]          30if00.c                 0   0.
+>   [OK]          30if00.c                 1   1.
+>   [OK]          35while00.c              0   0.
+>   [OK]          40functions00.c          0   0.
+>   [OK]          45earlyret00.c           0   0.
+>   [OK]          50multdec00.c            0   0.
+>   [OK]          50typeerr00.c            0   0.
+>   [OK]          50undec00.c              0   0.
+>
+> Full test results in `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-00core'.
+> Test Successful in 0.003s. 18 tests run.
+> Testing `suites/90lobster'.
+> This run has ID `FROBOLFR'.
+>
+>   [OK]          00dec01.c                 0   0.
+>   [OK]          00dec02.c                 0   0.
+>   [OK]          00dec03.c                 0   0.
+>   [OK]          00dec04.c                 0   0.
+>   [OK]          00dec05.c                 0   0.
+>   [OK]          00dec06.c                 0   0.
+>   [OK]          00get001.c                0   0.
+>   [OK]          00get002.c                0   0.
+>   [OK]          00get003.c                0   0.
+>   [OK]          00get003.c                1   1.
+>   [OK]          00get004.c                0   0.
+>   [OK]          00get004.c                1   1.
+>   [OK]          00get005.c                0   0.
+>   [OK]          00main001.c               0   0.
+>   [OK]          00main002.c               0   0.
+>   [OK]          00main003.c               0   0.
+>   [OK]          00main004.c               0   0.
+>   [OK]          00print001.c              0   0.
+>   [OK]          00print002.c              0   0.
+>   [OK]          00print003.c              0   0.
+>   [OK]          00prompt001.c             0   0.
+>   [OK]          00prompt002.c             0   0.
+>   [OK]          00prompt003.c             0   0.
+>   [OK]          05assign01.c              0   0.
+>   [OK]          05assign03.c              0   0.
+>   [OK]          10ops_int001.c            0   0.
+>   [OK]          10ops_int002.c            0   0.
+>   [OK]          10ops_int003.c            0   0.
+>   [OK]          20assign001.c             0   0.
+>   [OK]          20assign002.c             0   0.
+>   [OK]          20assign003.c             0   0.
+>   [OK]          20assign004.c             0   0.
+>   [OK]          25blocks001.c             0   0.
+>   [OK]          25blocks002.c             0   0.
+>   [OK]          25blocks003.c             0   0.
+>   [OK]          30if001.c                 0   0.
+>   [OK]          30if001.c                 1   1.
+>   [OK]          30if002.c                 0   0.
+>   [OK]          30if003.c                 0   0.
+>   [OK]          30if003.c                 1   1.
+>   [OK]          30if004.c                 0   0.
+>   [OK]          35while001.c              0   0.
+>   [OK]          35while002.c              0   0.
+>   [OK]          35while003_new.c          0   0.
+>   [OK]          40functions001.c          0   0.
+>   [OK]          40functions002.c          0   0.
+>   [OK]          40functions003.c          0   0.
+>   [OK]          40functions004.c          0   0.
+>   [OK]          45earlyret001.c           0   0.
+>   [OK]          45earlyret002.c           0   0.
+>   [OK]          50multdec001.c            0   0.
+>   [OK]          50multdec002.c            0   0.
+>   [OK]          50multdec003.c            0   0.
+>   [OK]          50typerr001.c             0   0.
+>   [OK]          50typerr002.c             0   0.
+>   [OK]          50typerr003.c             0   0.
+>   [OK]          50typerr004.c             0   0.
+>   [OK]          50undec001.c              0   0.
+>   [OK]          50undec002.c              0   0.
+>   [OK]          50undec003.c              0   0.
+>   [OK]          50undec004.c              0   0.
+>   [OK]          50undec005.c              0   0.
+>   [OK]          55outofmem02.c            0   0.
+>   [OK]          55outofmem03.c            0   0.
+>   [OK]          55outofmem04.c            0   0.
+>   [OK]          56segerr00.c              0   0.
+>   [OK]          56segerr01.c              0   0.
+>   [OK]          56segerr02.c              0   0.
+>   [OK]          56segerr03.c              0   0.
+>
+> Full test results in `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-90lobster'.
+> Test Successful in 0.009s. 69 tests run.

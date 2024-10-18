@@ -19,6 +19,8 @@ void print_assigned() {
     print_int(x[0]) ;
     print_int(x[1]) ;
     print_int(x[2]) ;
+
+    return ;
 }
 
 void main() {
