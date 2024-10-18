@@ -26,7 +26,7 @@ exception UndefinedFunction of Ast.Id.t
 exception TypeError of string
 
 (* OutOfMemoryError is raised when the an attempt is made to allocate more
- * space in the store than is available.
+ * space in the store  than is available.
  *)
 exception OutOfMemoryError
 
@@ -532,7 +532,27 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       begin
         match v with
         | Value.V_Bool b -> 
-          if b then exec_stm rhos s 
+          (* need to do recursive call with another while but updated rhos
+          but cant just eval the block statment every time, because that will push a new env onto rhos and then pop it off once its done.  *)
+          (*  *)
+
+          (* first check test expr (eval'd under current rhos) *)
+          if b then
+            (* If true, execute Block s to update rhos to rhos'
+             * When the Block s is executed, a new env is pushed onto rhos and then popped off, and vars in rhos may / may not have been updated.
+             * This reflects the While operational semantics.
+             *)
+            let rhos' = (exec_stm rhos s) in
+            begin 
+              (* check if there was a return in the While block. 
+               * If no return, re-evaluate block expr with rhos'
+               * If return, return frame val
+               *)
+              match rhos' with
+              | Envs rhos_envblock -> exec_stm rhos_envblock (Ast.Stm.While (e, s))
+              | Return v -> Frame.Return v
+            end
+          (* if b then exec_stm     (Ast.Stm.While (e, s)) *)
           else Frame.Envs rhos
         | _ -> raise @@ TypeError "non bool test case given to While"
       end

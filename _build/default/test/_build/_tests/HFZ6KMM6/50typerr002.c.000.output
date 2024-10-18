@@ -1,0 +1,3 @@
+Envs: x: 5
+Envs: s: hello, x: 5
+[33mASSERT[0m suites/90lobster/50typerr002.c

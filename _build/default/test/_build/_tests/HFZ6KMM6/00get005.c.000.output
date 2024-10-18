@@ -1,0 +1,4 @@
+Envs: s: f
+Envs: b: true, s: f
+Envs: x: 5, b: true, s: f
+[33mASSERT[0m suites/90lobster/00get005.c

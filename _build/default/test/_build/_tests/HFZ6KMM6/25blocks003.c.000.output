@@ -1,0 +1,4 @@
+Envs: x: 0
+Envs: x: 1 | x: 0
+Envs: x: 2 | x: 1 | x: 0
+[33mASSERT[0m suites/90lobster/25blocks003.c

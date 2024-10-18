@@ -1,0 +1,11 @@
+Envs: x: 4294967296
+[33mASSERT[0m suites/90lobster/55outofmem05.c
+[31mFAIL[0m suites/90lobster/55outofmem05.c
+
+   Expected: `[32mSome "OutOfMemoryError"[0m'
+   Received: `[31mNone[0m'
+
+Raised at Alcotest_engine__Test.check in file "src/alcotest-engine/test.ml", line 203, characters 4-261
+Called from Alcotest_engine__Core.Make.protect_test.(fun) in file "src/alcotest-engine/core.ml", line 186, characters 17-23
+Called from Alcotest_engine__Monad.Identity.catch in file "src/alcotest-engine/monad.ml", line 24, characters 31-35
+
