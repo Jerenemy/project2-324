@@ -13,16 +13,10 @@
 #  ; build_dir = In_build_dir "default"
 #  ; instrument_with = []
 #  }
-$ /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -config > /var/folders/r0/d5kdxg1j5gx_vp9lqdkcxvzh0000gn/T/dune_6466af_output
-$ (cd _build/.sandbox/a3fd06a01ac27da5d5b160698a2a96e8/default && .ppx/0bb5094b13567c3c4e1ee33245b80e63/ppx.exe --cookie 'library-name="cminus"' -o lib/interp.pp.ml --impl lib/interp.ml -corrected-suffix .ppx-corrected -diff-cmd - -dump-ast)
-$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamldep.opt -modules -impl lib/interp.pp.ml) > _build/default/lib/.cminus.objs/cminus__Interp.impl.d
-$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I lib/.cminus.objs/byte -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -no-alias-deps -opaque -open Cminus -o lib/.cminus.objs/byte/cminus__Interp.cmo -c -impl lib/interp.pp.ml)
-$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I lib/.cminus.objs/byte -I lib/.cminus.objs/native -I /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime -intf-suffix .ml -no-alias-deps -opaque -open Cminus -o lib/.cminus.objs/native/cminus__Interp.cmx -c -impl lib/interp.pp.ml)
-$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/cminus.cmxa lib/.cminus.objs/native/cminus.cmx lib/.cminus.objs/native/cminus__Ast.cmx lib/.cminus.objs/native/cminus__Parser.cmx lib/.cminus.objs/native/cminus__Notes.cmx lib/.cminus.objs/native/cminus__Lexer.cmx lib/.cminus.objs/native/cminus__Failures.cmx lib/.cminus.objs/native/cminus__Interp.cmx)
-$ (cd _build/default && /Users/jeremyzay/.opam/5.1.1/bin/ocamlopt.opt -w @1..3@5..28@31..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -o test/tests.exe /Users/jeremyzay/.opam/5.1.1/lib/ocaml/str/str.cmxa /Users/jeremyzay/.opam/5.1.1/lib/astring/astring.cmxa /Users/jeremyzay/.opam/5.1.1/lib/cmdliner/cmdliner.cmxa /Users/jeremyzay/.opam/5.1.1/lib/uutf/uutf.cmxa /Users/jeremyzay/.opam/5.1.1/lib/alcotest/stdlib_ext/alcotest_stdlib_ext.cmxa /Users/jeremyzay/.opam/5.1.1/lib/fmt/fmt.cmxa /Users/jeremyzay/.opam/5.1.1/lib/fmt/fmt_cli.cmxa /Users/jeremyzay/.opam/5.1.1/lib/re/re.cmxa /Users/jeremyzay/.opam/5.1.1/lib/stdlib-shims/stdlib_shims.cmxa /Users/jeremyzay/.opam/5.1.1/lib/alcotest/engine/alcotest_engine.cmxa /Users/jeremyzay/.opam/5.1.1/lib/ocaml/unix/unix.cmxa /Users/jeremyzay/.opam/5.1.1/lib/fmt/fmt_tty.cmxa /Users/jeremyzay/.opam/5.1.1/lib/alcotest/alcotest.cmxa -I /Users/jeremyzay/.opam/5.1.1/lib/alcotest /Users/jeremyzay/.opam/5.1.1/lib/yojson/yojson.cmxa /Users/jeremyzay/.opam/5.1.1/lib/ppx_deriving/runtime/ppx_deriving_runtime.cmxa lib/cminus.cmxa test/.tests.eobjs/native/dune__exe__Tests.cmx)
+$ /Users/jeremyzay/.opam/5.1.1/bin/ocamlc.opt -config > /var/folders/r0/d5kdxg1j5gx_vp9lqdkcxvzh0000gn/T/dune_30d18b_output
 $ (cd _build/default/test && ./tests.exe)
 > Testing `suites/00core'.
-> This run has ID `YSNIDNKZ'.
+> This run has ID `MN4B88LT'.
 >
 >   [OK]          00get00.c                0   0.
 >   [OK]          00get00.c                1   1.
@@ -44,9 +38,18 @@ $ (cd _build/default/test && ./tests.exe)
 >   [OK]          50undec00.c              0   0.
 >
 > Full test results in `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-00core'.
-> Test Successful in 0.003s. 18 tests run.
+> Test Successful in 0.002s. 18 tests run.
+> Testing `suites/10arrays'.
+> This run has ID `QDZRZK0Q'.
+>
+>   [OK]          00dec00.c             0   0.
+>   [OK]          05assign00.c          0   0.
+>   [OK]          90sort00.c            0   0.
+>
+> Full test results in `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-10arrays'.
+> Test Successful in 0.000s. 3 tests run.
 > Testing `suites/90lobster'.
-> This run has ID `FROBOLFR'.
+> This run has ID `P8KKPXD1'.
 >
 >   [OK]          00dec01.c                 0   0.
 >   [OK]          00dec02.c                 0   0.
@@ -119,4 +122,4 @@ $ (cd _build/default/test && ./tests.exe)
 >   [OK]          56segerr03.c              0   0.
 >
 > Full test results in `~/Desktop/comp324/PROJECT_2/project2/starter/_build/default/test/_build/_tests/suites-90lobster'.
-> Test Successful in 0.009s. 69 tests run.
+> Test Successful in 0.007s. 69 tests run.

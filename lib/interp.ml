@@ -1,6 +1,6 @@
 (* C- interpreter.
  *
- * N. Danner
+ * J.Zay, F.Caballero, F.Hartigan-O'Connor
  *)
 
 (* Raised when a function body terminates without executing `return`.
@@ -45,7 +45,7 @@ module Value = struct
     | V_Int of int
     | V_Bool of bool
     | V_Str of string
-    | V_Loc of int (*--- location of pointers TO STORE*)
+    | V_Loc of int (* location of pointers to store *)
     [@@deriving show]
 
   (* to_string v = a string representation of v (more human-readable than
@@ -207,14 +207,13 @@ and a reference to the next free memory location.
 module Store = struct
   type t = (Value.t Array.t * int ref)
 
-  (* Initialize store with every value of type V_Undefined
-  then when indexed, immediately get correct val
-  *)
+  (* Initialize store with every value of type V_Undefined *)
   let store_arr : Value.t Array.t = Array.make 100 Value.V_Undefined
 
-  (* type int ref to globally keep track of next available mem. 
-   * works like a pointer: needs to be dereferenced and updated with reference assignment.
-   *)
+  (* 
+  type int ref to globally keep track of next available memory. 
+  works like a pointer: needs to be dereferenced and updated with reference assignment.
+  *)
   let next_free : int ref = ref 0
 
   (* 
@@ -236,7 +235,7 @@ module Store = struct
     store: The current memory store.
     size: The number of memory units to allocate.
   Output:
-    If sufficient space is available:
+    If space is available:
       Updates next_free by adding size.
       Returns Value.V_Loc(current_loc), where current_loc is the previous value of next_free.
     If insufficient space:
@@ -600,10 +599,10 @@ Arguments:
 Output:
   Returns an updated environment with new array bindings.
   For each declaration:
-  If x is already declared in rho, raises MultipleDeclaration(x).
-    Evaluates the size expression to get the array size.
-    Allocates memory in the store and binds x to Value.V_Loc(start).
-  If the size is not an integer, raises TypeError.
+    If x is already declared in rho, raises MultipleDeclaration(x).
+      Evaluates the size expression to get the array size.
+      Allocates memory in the store and binds x to Value.V_Loc(start).
+    If the size is not an integer, raises TypeError.
 *)
 let rec arr_dec 
     (eval : Store.t -> EnvBlock.t -> Ast.Expr.t option -> Value.t) 
@@ -656,8 +655,8 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     rhos: The environment block.
   Output:
     Returns a frame:
-      If no Return is encountered, returns Frame.Envs(rhos') with the updated environment block.
-      If a Return is encountered, returns Frame.Return(v) with the returned value.
+      If no Return is encountered, returns an environment block with the updated environment block.
+      If a Return is encountered, returns a return frame with the returned value.
   *)
   let rec exec_stms 
       (store : Store.t) 
@@ -686,7 +685,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
     rhos: The environment block.
     stm: The statement to execute.
   Output:
-    Returns a frame, either Frame.Envs(rhos') or Frame.Return(v), depending on the statement execution.
+    Returns a frame, either an environment block or a return frame, depending on the statement execution.
   *)
   and exec_stm 
       (store : Store.t)
@@ -828,7 +827,7 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
   *)
   and eval (store : Store.t) (rhos : EnvBlock.t) (e_opt : Ast.Expr.t option) : Value.t =
     (* 
-    instead of eta, paass rhos (envblock) because never evaluate exprs (or stms) under Frame.Return.
+    instead of eta, pass rhos (envblock) because never evaluate exprs (or stms) under Frame.Return.
     e : Ast.Expr.t option, when SOME, eval expr, when NONE, return V_Undefined, 
       because eval-ing expr of a VarDec stm, when NONE, no val assigned 
     *)
@@ -863,10 +862,10 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       (* `s` parses to String s for strings s. *)
       | Str s -> V_Str s
       | Unop (op, e) ->
-        unop op (eval store rhos (Some e)) (* is the Some necessary, or are we just doing it blindly for no reason? *)
+        unop op (eval store rhos (Some e)) 
       | Binop (op, e, e') ->
         binop op (eval store rhos (Some e)) (eval store rhos (Some e'))
-      (* is es of type Ast.Expr.t option? es is a list of arguments.  *)
+      
       | Call(f, es) -> 
         begin
           try

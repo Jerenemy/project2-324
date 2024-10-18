@@ -1,6 +1,6 @@
 (* C- interpreter.
  *
- * N. Danner
+ * J.Zay, F.Caballero, F.Hartigan-O'Connor
  *)
 
 (* Raised when a function body terminates without executing `return`.
@@ -45,7 +45,7 @@ module Value = struct
     | V_Int of int
     | V_Bool of bool
     | V_Str of string
-    | V_Loc of int (*--- location of pointers TO STORE*)
+    | V_Loc of int (* location of pointers to store *)
     [@@deriving show]
 
   (* to_string v = a string representation of v (more human-readable than
@@ -198,24 +198,49 @@ end
 
 
 
-(* is every single item in the store going to be of type V_Loc?
-yes, so we can compare them directly *)
+(* 
+module Store: type t = Value.t array * int ref
+
+Represents the memory store as a tuple containing an array of Value.t 
+and a reference to the next free memory location.
+*)
 module Store = struct
   type t = (Value.t Array.t * int ref)
 
-  (* Initialize store with every value of type V_Undefined
-  then when indexed, immediately get correct val
-  *)
+  (* Initialize store with every value of type V_Undefined *)
   let store_arr : Value.t Array.t = Array.make 100 Value.V_Undefined
 
-  (* type int ref to globally keep track of next available mem. 
-   * works like a pointer: needs to be dereferenced and updated with reference assignment.
-   *)
+  (* 
+  type int ref to globally keep track of next available memory. 
+  works like a pointer: needs to be dereferenced and updated with reference assignment.
+  *)
   let next_free : int ref = ref 0
 
+  (* 
+  create_store -> Store.t 
+  Creates and initializes a new memory store with default values.
+
+  A new store where:
+    The array is of size 100, initialized with Value.V_Undefined.
+    The next_free reference is set to 0.
+  *)
   let create_store : t = (store_arr, next_free)
 
-  (* Allocates a block of memory for a declared array and returns the starting location *)
+  (* 
+  allocate : Store.t -> int -> Value.t
+
+  Allocates a block of memory in the store for an array of a given size and returns the starting location.
+
+  Arguments:
+    store: The current memory store.
+    size: The number of memory units to allocate.
+  Output:
+    If space is available:
+      Updates next_free by adding size.
+      Returns Value.V_Loc(current_loc), where current_loc is the previous value of next_free.
+    If insufficient space:
+      Raises OutOfMemoryError.
+  *)
   let allocate (store : t) (size : int) : Value.t =
     let store_arr, next_free = store in 
     (* dereference next_free with ! *)
@@ -227,7 +252,22 @@ module Store = struct
       let _ = next_free := current_loc + size in
     Value.V_Loc current_loc
 
-  (* gets a value from a specific memory location *)
+  (* 
+  get : Store.t -> int -> Value.t
+
+  Retrieves the value stored at a specific memory location.
+
+  Arguments:
+    store: The current memory store.
+    loc: The memory location to access.
+  Output:
+    Returns the value at loc in the store.
+    If loc is out of bounds (negative or beyond next_free), raises SegmentationError(loc).
+
+  Note: The store does allow you to get a value past the length of the array indexing,
+    as long as that value has been previously assigned in the store, as there is no size information
+    contained within each array. However, this aligns reasonably with our intuition of the C language.
+  *)
   let get (store : t) (loc : int) : Value.t = 
     let store_arr, next_free = store in 
     if loc < 0 || loc >= !(next_free) then
@@ -235,8 +275,20 @@ module Store = struct
     else 
       (* get store_arr[loc] *)
       Array.get store_arr loc
-    
-  (* sets a value at a specific memory location *)
+
+  (* 
+  set : Store.t -> int -> Value.t -> unit
+
+  Sets the value at a specific memory location in the store.
+
+  Arguments:
+    store: The current memory store.
+    loc: The memory location to update.
+    v: The value to store at loc.
+  Output:
+    Updates the value at loc to v.
+    If loc is out of bounds, raises SegmentationError(loc).
+  *)
   let set (store : t) (loc : int) (v : Value.t) : unit = 
     let store_arr, next_free = store in 
     if loc < 0 || loc >= !(next_free) then
@@ -244,37 +296,38 @@ module Store = struct
     else 
       (* set store_arr[loc] = v *)
       Array.set store_arr loc v
-
 end 
 
+(* 
+type t = (Ast.Id.t * Value.t) list
+
+Represents an environment as a list of identifier-value pairs.
+*)
 module Env = struct
   type t = (Ast.Id.t * Value.t) list
 
   (* empty = the empty environment.
    *)
   let empty : t = []
-  (* add exceptions for function redef and one other thing *)
-  (* 
-  Env.lookup (rho : Env.t) (x : Ast.Id.t) : Value.t
-    
-  Retrieve the value associated with identifier x from the environment rho or the program pgm.
   
-  Searches rho for a binding (x', v') where x = x'. If found, returns v'.
-  Raises UnboundVariable x if x is not found. 
+  (* 
+  lookup : Env.t -> Ast.Id.t -> Value.t option
+
+  Retrieves the value associated with an identifier from the environment.
+
+  Arguments:
+    rho: The environment to search.
+    x: The identifier to look up.
+  Output:
+    If x is found, returns Some(v).
+    If x is not found, returns None.. 
   *)
   let rec lookup 
       (rho : t) 
       (x : Ast.Id.t) : Value.t option = 
     match rho with
-    (* | _ -> Failures.unimplemented "lookup" *)
-
       | (x',v) :: rho' -> 
         if x = x' then Some (v)
-
-        (* else, need to look in the rest of the interp, 
-        and if the recursive call returns Some, then the entire thing should be Some, 
-        but if the recursive call returns None, then the entire thing should be None. 
-        but can't cons the other vars back on if it's option type, so need to deconstruct it *)
         else 
           let v_opt = lookup rho' x in 
           begin
@@ -285,32 +338,28 @@ module Env = struct
 
       | [] -> None 
 
-  (* 
-  Env.declaration (rho : Env.t) (x : Ast.Id.t) (v : Value.t) : (Env.t)
-  FIX SPECIFICATION
-  NOT IN USE
-  Declare the value v to the identifier x, updating the environment rho.
- *)
-  let declaration 
-      (rho : t) 
-      (x : Ast.Id.t) 
-      (v: Value.t) : (t) = 
-    (x, v) :: rho
-
     
-    (* when returns Some, that means the head environment has been updated. when returns None, 
-    that means that var was not in the head environment, and the update needs to be performed on a lower level environment  *)
+    (* 
+    update : Env.t -> Ast.Id.t -> Value.t -> Env.t option
 
-    let rec update (rho : t) (x : Ast.Id.t) (v : Value.t) : t option =
+    Updates the value associated with an identifier in the environment.
+
+    Arguments:
+      rho: The environment to update.
+      x: The identifier to update.
+      v: The new value for x.
+    Output:
+      If x is found, returns Some(rho') with x updated to v.
+      If x is not found, returns None.
+    *)
+    let rec update 
+        (rho : t) 
+        (x : Ast.Id.t) 
+        (v : Value.t) : t option =
       match rho with
       | (x',v') :: rho' -> 
         if x = x' then 
           Some ((x, v) :: rho')
-
-        (* else, need to look in the rest of the interp, 
-        and if the recursive call returns Some, then the entire thing should be Some, 
-        but if the recursive call returns None, then the entire thing should be None. 
-        but can't cons the other vars back on if it's option type, so need to deconstruct it *)
         else 
           let rho_opt = update rho' x v in 
           begin
@@ -318,20 +367,8 @@ module Env = struct
             | Some rho_some -> Some ((x',v') :: rho_some)
             | None -> None
           end
-
       | [] -> None 
   
-
-    (* i DO need to return if it actually updated a variable, because if it does then i need to try to assign it in the next Env in EnvBlock
-      so return Some Env.t when updated
-    and return None when not updated *)
-  (* let rec update (rho : t) (x : Ast.Id.t) (v : Value.t) : t =
-    match rho with
-    | (x',v') :: rho' -> 
-      if x = x' then (x, v) :: rho'
-      else (x',v') :: (update rho' x v)
-    | [] -> [] *) 
-    (*shouldnt [] be Env.empty to be the correct type? *)
 
   (* DEBUGGING *)
   let show (rho : t) : string =
@@ -339,22 +376,40 @@ module Env = struct
       Printf.sprintf "%s: %s" (x) (Value.to_string v)
     ) rho in
     String.concat ", " bindings
-  
-  
 end
 
+(* 
+type t = Envs of Env.t list
 
+Represents a block of environments.
+*)
 module EnvBlock = struct
   type t = Envs of Env.t list
 
   (*
-  maybe call this start/init/new 
-  empty = the new environment block, which is NOT actually empty: a list that contains only the empty environment.
-   *)
+  empty : EnvBlock.t
+
+  Initializes a new environment block containing a single empty environment.
+  *)
   let empty : t = Envs [Env.empty]
 
+  (* 
+  assign : EnvBlock.t -> Ast.Id.t -> Value.t -> EnvBlock.t
 
-  let rec assign (rhos : t) (x : Ast.Id.t) (v : Value.t) : t = 
+  Assigns a value to an identifier in the nearest enclosing environment where it is declared.
+
+  Arguments:
+    rhos: The environment block to update.
+    x: The identifier to assign.
+    v: The value to assign to x.
+  Output:
+    Returns a new EnvBlock with x updated to v in the appropriate environment.
+    If x is not found, raises UnboundVariable(x).
+  *)
+  let rec assign 
+      (rhos : t) 
+      (x : Ast.Id.t) 
+      (v : Value.t) : t = 
     match rhos with
     | Envs (rho :: rhos') -> 
       (* if x in rho then update x to v, else rho :: assign rhos' x v *)
@@ -362,17 +417,28 @@ module EnvBlock = struct
       begin
         match rho_opt with
         | Some rho' -> Envs (rho' :: rhos')
-        (* This expression has type t but an expression was expected of type Env.t listocamllsp *)
         | None -> 
           (* need it to be type Env.t list, not Envblock.Envs *)
           let Envs envs_assigned = (assign (Envs rhos') x v) in
           Envs (rho :: envs_assigned)
-        (* why are returning just rhos here? this means that the var wasn't what? during assign *) 
       end
-
     | Envs [] -> raise @@ UnboundVariable x
 
-  let rec lookup (rhos : t) (x : Ast.Id.t) : Value.t = 
+  (* 
+  lookup : EnvBlock.t -> Ast.Id.t -> Value.t
+
+  Looks up the value of an identifier, searching from the innermost to the outermost scope.
+
+  Arguments:
+    rhos: The environment block to search.
+    x: The identifier to look up.
+  Output:
+    Returns the value associated with x.
+    If x is not found, raises UnboundVariable(x).
+  *)
+  let rec lookup 
+      (rhos : t) 
+      (x : Ast.Id.t) : Value.t = 
     match rhos with
     | Envs (rho :: rhos') -> 
       (* if x in rho then get v, else look for v in rhos' *)
@@ -382,7 +448,6 @@ module EnvBlock = struct
         | Some v_some -> v_some
         | None -> lookup (Envs rhos') x
       end
-
     | Envs [] -> raise @@ UnboundVariable x
 
   (* DEBUGGING *)
@@ -393,12 +458,18 @@ module EnvBlock = struct
         String.concat " | " env_strings
 end
 
+(* 
+type t = Envs of EnvBlock.t | Return of Value.t
+
+Represents a frame, which can be either an environment block or a return value.
+*)
 module Frame = struct
   
   type t = Envs of EnvBlock.t
          | Return of Value.t
   
-  (* empty = the new frame, which contains the a new environment block: empty.
+  (* 
+  empty = the new frame, which contains the a new environment block: empty.
    *)
   let empty = Envs EnvBlock.empty
 end
@@ -411,8 +482,22 @@ let print_frame (frame : Frame.t) : unit =
   | Frame.Return v ->
       Printf.printf "Return: %s\n" (Value.to_string v)
 
+(* 
+unop : Ast.Expr.unop -> Value.t -> Value.t
 
-let unop (op : Ast.Expr.unop) (v : Value.t) : Value.t =
+Evaluates a unary operation on a given value.
+
+Arguments:
+  op: The unary operator to apply.
+  v: The value on which the operator is applied.
+Output:
+  If op is Neg and v is an integer, returns -v.
+  If op is Not and v is a boolean, returns !v.
+  For any other combinations, raises a TypeError.
+*)
+let unop 
+    (op : Ast.Expr.unop) 
+    (v : Value.t) : Value.t =
   match (op, v) with
   | (Neg, V_Int n) -> V_Int (-n)
   | (Not, V_Bool b) -> V_Bool (not b)
@@ -421,10 +506,23 @@ let unop (op : Ast.Expr.unop) (v : Value.t) : Value.t =
             (Ast.Expr.show_unop op) (Value.to_string v)
           )
         
-(* binop op v v' = the result of applying the metalanguage operation
-* corresponding to `op` to v and v'.
+(* 
+binop : Ast.Expr.binop -> Value.t -> Value.t -> Value.t
+
+Evaluates a binary operation on two given values.
+
+Arguments:
+  op: The binary operator to apply.
+  v1: The first value.
+  v2: The second value.
+Output:
+  Typical mathematical binary functions...
+  For any other combinations, raises a TypeError.
 *)
-let binop (op : Ast.Expr.binop) (v : Value.t) (v' : Value.t) : Value.t =
+let binop 
+    (op : Ast.Expr.binop) 
+    (v : Value.t) 
+    (v' : Value.t) : Value.t =
   match (op, v, v') with
   | (Plus, Value.V_Int n, Value.V_Int n') -> Value.V_Int (n + n')
   | (Minus, Value.V_Int n, Value.V_Int n') -> Value.V_Int (n - n')
@@ -444,12 +542,35 @@ let binop (op : Ast.Expr.binop) (v : Value.t) (v' : Value.t) : Value.t =
             Printf.sprintf "Bad operand types: %s %s %s"
               (Value.to_string v) (Ast.Expr.show_binop op) (Value.to_string v')
           )
-        
-let rec var_dec (eval) (store : Store.t) (rhos : EnvBlock.t) (rho : Env.t) (vds : (Ast.Id.t * Ast.Expr.t option) list) : Env.t = 
+
+(* 
+var_dec : (Store.t -> EnvBlock.t -> Ast.Expr.t option -> Value.t) ->
+          Store.t -> EnvBlock.t -> Env.t ->
+          (Ast.Id.t * Ast.Expr.t option) list -> Env.t
+
+Processes a list of variable declarations, updating the current environment.
+
+Arguments:
+  eval: The evaluation function.
+  store: The current memory store.
+  rhos: The environment block.
+  rho: The current environment.
+  vds: A list of variable declarations, each with an identifier and an optional initializing expression.
+Output:
+  Returns an updated environment with new variable bindings.
+  For each declaration:
+    If x is already declared in rho, raises MultipleDeclaration(x).
+    If an initializing expression is provided, binds x to its evaluated value.
+    If no expression is provided, binds x to Value.V_Undefined.
+*)
+let rec var_dec 
+    (eval : Store.t -> EnvBlock.t -> Ast.Expr.t option -> Value.t) 
+    (store : Store.t) 
+    (rhos : EnvBlock.t) 
+    (rho : Env.t) 
+    (vds : (Ast.Id.t * Ast.Expr.t option) list) : Env.t = 
   match vds with
   | [] -> rho (* base case *)
-  (* need rhos to pass into eval, but does it make sense passing in rhos and rho separately? do it for simpler style *)
-  (* I'll deal with the problem here, and catch the Value.V_None and convert it to Value.V_Undefined here? *)
   | (x, e_opt) :: vds' ->  
     if Env.lookup rho x <> None then (* implement multidec using lookup *)
       raise @@ MultipleDeclaration x
@@ -461,10 +582,34 @@ let rec var_dec (eval) (store : Store.t) (rhos : EnvBlock.t) (rho : Env.t) (vds 
         | None -> 
           var_dec eval store rhos ((x, Value.V_Undefined) :: rho)  vds'
       end
-    (* this should solve the problem - it did *)
    
-(* INSERT SPECIFICATION *)
-let rec arr_dec (eval) (store : Store.t) (rhos : EnvBlock.t) (rho : Env.t) (ads : (Ast.Id.t * Ast.Expr.t) list) : Env.t =
+(* 
+arr_dec : (Store.t -> EnvBlock.t -> Ast.Expr.t option -> Value.t) ->
+          Store.t -> EnvBlock.t -> Env.t ->
+          (Ast.Id.t * Ast.Expr.t) list -> Env.t
+
+Processes a list of array declarations, allocating memory and updating the environment.
+
+Arguments:
+  eval: The evaluation function.
+  store: The current memory store.
+  rhos: The environment block.
+  rho: The current environment.
+  ads: A list of array declarations, each with an identifier and an expression for size.
+Output:
+  Returns an updated environment with new array bindings.
+  For each declaration:
+    If x is already declared in rho, raises MultipleDeclaration(x).
+      Evaluates the size expression to get the array size.
+      Allocates memory in the store and binds x to Value.V_Loc(start).
+    If the size is not an integer, raises TypeError.
+*)
+let rec arr_dec 
+    (eval : Store.t -> EnvBlock.t -> Ast.Expr.t option -> Value.t) 
+    (store : Store.t) 
+    (rhos : EnvBlock.t) 
+    (rho : Env.t) 
+    (ads : (Ast.Id.t * Ast.Expr.t) list) : Env.t =
   match ads with
   | [] -> rho (* base case *)
   | (x, e) :: ads' -> 
@@ -481,9 +626,7 @@ let rec arr_dec (eval) (store : Store.t) (rhos : EnvBlock.t) (rho : Env.t) (ads 
           arr_dec eval store rhos ((x, start) :: rho) ads'
         | _ -> raise @@ TypeError "array size must be of int"
       end
-        
 
-    (* do we need to change lookup? how does lookup handle arrays? or does it even? it does. *)
 
 (* exec p:  Execute the program `p`.
  *)
@@ -498,15 +641,27 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
         else find_body fundefs' 
     in
       find_body fundefs
-    (* Failures.unimplemented "get_body" *)
   in
 
   (* 
-  if exec_stms returns a Frame, when does it return a frame? When it's an empty list?
-    are the block statemenet returns handeled here? 
-  (when a block statement concludes, it returns a ReturnFrame? or when a function concludes?) 
+  exec_stms : Store.t -> Ast.Stm.t list -> EnvBlock.t -> Frame.t
+
+
+  Executes a list of statements within the given environment block.
+
+  Arguments:
+    store: The current memory store.
+    stms: The list of statements to execute.
+    rhos: The environment block.
+  Output:
+    Returns a frame:
+      If no Return is encountered, returns an environment block with the updated environment block.
+      If a Return is encountered, returns a return frame with the returned value.
   *)
-  let rec exec_stms (store : Store.t) (stms : Ast.Stm.t list) (rhos : EnvBlock.t) : Frame.t =
+  let rec exec_stms 
+      (store : Store.t) 
+      (stms : Ast.Stm.t list) 
+      (rhos : EnvBlock.t) : Frame.t =
     match stms with 
     | [] -> Frame.Envs rhos
     | stm :: stms' ->
@@ -520,24 +675,36 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
             exec_stms store stms' rhos'
         end 
 
-    (* put this as a mutually recursive in exec, paired with exec_stms *)
-  and exec_stm (store : Store.t) (rhos : EnvBlock.t) (stm : Ast.Stm.t)  : Frame.t = 
+  (* 
+  exec_stm : Store.t -> EnvBlock.t -> Ast.Stm.t -> Frame.t
+
+  Executes a single statement within the given environment block.
+
+  Arguments:
+    store: The current memory store.
+    rhos: The environment block.
+    stm: The statement to execute.
+  Output:
+    Returns a frame, either an environment block or a return frame, depending on the statement execution.
+  *)
+  and exec_stm 
+      (store : Store.t)
+      (rhos : EnvBlock.t) 
+      (stm : Ast.Stm.t)  : Frame.t = 
   
     match stm with 
+  
     | VarDec vds -> 
       begin
         match rhos with
         | Envs (rho :: rhos_tail) ->
           let rho' = var_dec eval store rhos rho vds in
           let new_rhos = EnvBlock.Envs (rho' :: rhos_tail) in
-          (* this should return a frame here, and then the rest of the stms should be executed in exec_stms *)
-          let frame = Frame.Envs new_rhos in 
-          let _ = print_frame frame in 
-          frame 
+          (* this returns a frame here, and then the rest of the stms are executed in exec_stms *)
+          Frame.Envs new_rhos
         | _ -> Failures.impossible "empty rhos"
       end
       
-    (* ArrayDec of (Id.t * Expr.t) list *)
     | ArrayDec ads ->
       begin
         match rhos with
@@ -549,26 +716,19 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
           frame
         | _ -> Failures.impossible "empty rhos"
       end
-      
-      (* Failures.unimplemented "exec_stms ArrayDec" *)
   
-    (* (Ast.Stm.Assign ("x", (Ast.Expr.Num 1))) *)
     | Assign (x, e) -> 
-      let v = eval store rhos (Some e) in (* Some e, because never assigning a variable an undefined value, right? *)
+      let v = eval store rhos (Some e) in (* Some e, because never assigning a variable an undefined value *)
       Frame.Envs (EnvBlock.assign rhos x v)
-      
-      (* xs[0] = 1 ; *)
-      (* (Ast.Stm.IndexAssign ("xs", (Ast.Expr.Num 0), (Ast.Expr.Num 1))); *)
-      (* Id.t * Expr.t * Expr.t
-      IndexAssign(xs, e, e')
-       *)
+    
     | IndexAssign (xs, e, e') -> 
-      (* eval both exprs
+      (* 
+      eval both exprs
       lookup xs in rhos
       set the val at v to be v'
       return the (unchanged) rhos frame
-      need to pass location + index assigning to to set
-       *)
+      need to pass location + index to set
+      *)
       let v = eval store rhos (Some e) in
       let v' = eval store rhos (Some e') in
       begin
@@ -584,22 +744,15 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
           end
         | _ -> raise @@ TypeError "array index must be int"
       end
-
-      (* Failures.unimplemented "exec_stms IndexAssign" *)
   
     | Expr e ->
-      (* need  to pass a val of type EnvBlock into eval, not Frame *)
-      (* ERROR This expression has type Ast.Expr.t but an expression was expected of type
-      Ast.Expr.t option *)
-      let _ = eval store rhos (Some e) in (* VERIFY: is e always Some, never None? *)
       (* stm expr execution doesn't change the frame, maybe has a side effect (like print) *)
+      let _ = eval store rhos (Some e) in 
       Frame.Envs rhos  (* Continue with the same environment *)
   
-    
     | Block stms -> 
       (* to evaluate stm list given by block just push new empty env on top of rhos and pop it back off at the end *)
       let EnvBlock.Envs rhos_list = rhos in
-      (* does the new env get popped off the list once exec_stms is done? it needs to one way or another. *)
       let block_frame = exec_stms store stms (EnvBlock.Envs (Env.empty :: rhos_list)) in
       begin 
         match block_frame with
@@ -611,11 +764,6 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
           Failures.impossible "empty env block"
       end
 
-    (* `if (e) s else s'` parses to If(e, s, s').
-       * `if (e) s` parses to If(e, s, Block []).
-       *)
-    (* does it matter what type of expr each branch is?
-     *)
     | IfElse (e, s, s') -> 
       let v = eval store rhos (Some e) in
       begin
@@ -625,31 +773,34 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
           else exec_stm store rhos s'
         | _ -> raise @@ TypeError "non bool test case given to IfElse"
       end
-      (* Failures.unimplemented "IfElse" *)
 
-    (* `while e s` parses to While(e, s).
-       *)
     | While (e, s) -> 
       let v = eval store rhos (Some e) in
       begin
         match v with
         | Value.V_Bool b -> 
-          (* need to do recursive call with another while but updated rhos
-          but cant just eval the block statment every time, because that will push a new env onto rhos and then pop it off once its done.  *)
-          (*  *)
-
+          (* 
+          need to do recursive call with another while but updated rhos.
+          We just eval the block statment every time, 
+            which pushes a new env onto rhos and then pops it off once its done, 
+            but this has no effect on the rest of the envblock or the test expr 
+            if vars are declared within the new env created by the block.
+          *)
           (* first check test expr (eval'd under current rhos) *)
           if b then
-            (* If true, execute Block s to update rhos to rhos'
-             * When the Block s is executed, a new env is pushed onto rhos and then popped off, and vars in rhos may / may not have been updated.
-             * This reflects the While operational semantics.
+            (* 
+            If true, execute Block s to update rhos to rhos'
+            When the Block s is executed, a new env is pushed onto rhos and then popped off, 
+              and vars in rhos may / may not have been updated.
+              This reflects the While operational semantics.
              *)
             let rhos' = (exec_stm store rhos s) in
             begin 
-              (* check if there was a return in the While block. 
-               * If no return, re-evaluate block expr with rhos'
-               * If return, return frame val
-               *)
+              (* 
+              check if there was a return in the While block. 
+              If no return, re-evaluate While expr with rhos'
+              If return, return returnframe
+              *)
               match rhos' with
               | Envs rhos_envblock -> exec_stm store rhos_envblock (Ast.Stm.While (e, s))
               | Return v -> Frame.Return v
@@ -657,33 +808,29 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
           else Frame.Envs rhos
         | _ -> raise @@ TypeError "non bool test case given to While"
       end
-      (* Failures.unimplemented "While" *)
   
-    (* what is the type of return? is it an expression or expr option? sometimes it is None, right? *)
     | Return e_opt ->
-      Frame.Return (eval store rhos e_opt) (* FIRST MAJOR PROBLEM:  this sho*)
-      (* begin
-        match e_opt with
-        | Some e -> 
-          let v = eval rhos e in
-          Frame.Return v 
-        | None -> Frame.Return Value.V_None
-      end *)
-      
-      (* begin 
-        match e_opt with
-        | Some e -> 
-      let _ = v in
-      Failures.unimplemented "Return e" *)
-    (* | Ast.Stm.Return None -> *)
-    (* | _ -> Failures.impossible "uncaught case!" *)
+      Frame.Return (eval store rhos e_opt) 
     
-    
-      
   
-  (* instead of eta, paass rhos (envblock) because never evaluate exprs under Frame.Return  *)
-  (* e : Ast.Expr.t option, when SOME, eval expr, when NONE, return V_Undefined (because eval-ing expr of a VarDec stm, when NONE, no val assigned) *)
+  (* 
+  eval : Store.t -> EnvBlock.t -> Ast.Expr.t option -> Value.t
+      Evaluates an expression and returns its value.
+
+  Arguments:
+    store: The current memory store.
+    rhos: The environment block.
+    e_opt: The optional expression to evaluate.
+  Output:
+    If an expression is provided, returns its evaluated value.
+    If no expression is provided, returns Value.V_None.
+  *)
   and eval (store : Store.t) (rhos : EnvBlock.t) (e_opt : Ast.Expr.t option) : Value.t =
+    (* 
+    instead of eta, pass rhos (envblock) because never evaluate exprs (or stms) under Frame.Return.
+    e : Ast.Expr.t option, when SOME, eval expr, when NONE, return V_Undefined, 
+      because eval-ing expr of a VarDec stm, when NONE, no val assigned 
+    *)
     match e_opt with
     | Some e ->
     begin 
@@ -691,8 +838,8 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       (* `x` parses to Var "x".
        *)
       | Var x -> EnvBlock.lookup rhos x
-      (* `xs[e]` parses to Index(xs, e)
-      *)
+
+      (* `xs[e]` parses to Index(xs, e) *)
       | Index (xs, e) ->
         let v_index = eval store rhos (Some e) in
         begin 
@@ -715,10 +862,10 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
       (* `s` parses to String s for strings s. *)
       | Str s -> V_Str s
       | Unop (op, e) ->
-        unop op (eval store rhos (Some e)) (* is the Some necessary, or are we just doing it blindly for no reason? *)
+        unop op (eval store rhos (Some e)) 
       | Binop (op, e, e') ->
         binop op (eval store rhos (Some e)) (eval store rhos (Some e'))
-      (* is es of type Ast.Expr.t option? es is a list of arguments.  *)
+      
       | Call(f, es) -> 
         begin
           try
@@ -744,28 +891,15 @@ let exec (Ast.Prog.Pgm fundefs : Ast.Prog.t) : unit =
               end
           with
           | UndefinedFunction f -> 
-            (* verify with Fernando *)
             let vs = List.map (fun e -> eval store rhos (Some e)) es in (* each e in es needs to be type Ast.Expr.t option *)
             try 
-              (* do_call gets called in an infinite loop FIXED!!! *)
-              (* let _ = print_string "Io.do_call" in *)
               Io.do_call f vs
             with Io.ApiError _ -> raise @@ UndefinedFunction f 
         end
       
     end
     | None -> Value.V_None 
-    (* 
-    problem, this can't handle the case for when it's undefined and returns None, but the way it's set up it needs to. 
-    right now, during VarDec, it tries to evaluate the second item, but if it is None, it gives it the Value.V_Undefined and triggers this case.
-    could i just trigger it directly there?
 
-    TRIED TO FIX by checking if it's V_None when assigning to a var
-
-    but wait, this breaks the edge case of var dec with int x = print(x). but is that allowed?
-
-    that is not allowed, since can only declare vars of type int, str, and bool (I think?) 
-    *)
   in
   (* create store here *)
   let store = Store.create_store in

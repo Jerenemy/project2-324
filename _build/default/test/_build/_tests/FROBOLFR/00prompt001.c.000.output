@@ -1,4 +1,0 @@
-Envs: x: 10 | 
-Envs: b: false, x: 10 | 
-Envs: s: input1, b: false, x: 10 | 
-[33mASSERT[0m suites/90lobster/00prompt001.c

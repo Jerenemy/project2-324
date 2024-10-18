@@ -1,4 +1,0 @@
-Envs: x: 0 | 
-Envs: b: true, x: 0 | 
-Envs: s: test2, b: true, x: 0 | 
-[33mASSERT[0m suites/90lobster/00prompt002.c
